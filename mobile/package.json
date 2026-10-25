@@ -1,0 +1,19 @@
+{
+  "name": "luna-alex-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "tunnel": "expo start --tunnel",
+    "android": "expo start --android",
+    "ios": "expo start --ios"
+  },
+  "dependencies": {
+    "expo": "latest",
+    "expo-status-bar": "*",
+    "react": "*",
+    "react-native": "*",
+    "react-native-webview": "*"
+  }
+}

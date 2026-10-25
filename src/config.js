@@ -9,6 +9,10 @@
 //
 // Set it by defining window.COMPANION_CONFIG before the app loads, e.g.
 //   <script>window.COMPANION_CONFIG = { imageService: { endpoint: '/api/render-look' } }</script>
+// aiService: an endpoint YOU host (see server/worker.js) for chat replies
+// when the app runs outside claude.ai (GitHub Pages, the Expo app). Without
+// it, chat uses the clearly-labelled offline replies.
 export const CONFIG = {
+  aiService: (typeof window !== 'undefined' && window.COMPANION_CONFIG?.aiService) || null,
   imageService: (typeof window !== 'undefined' && window.COMPANION_CONFIG?.imageService) || null,
 };

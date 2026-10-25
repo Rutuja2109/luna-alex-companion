@@ -1,0 +1,52 @@
+/* Design tokens sampled from the reference boards (board-a/b/c.jpeg).
+   Layout: one phone-sized column; character imagery fills the upper screen,
+   translucent navy cards and pill tabs sit over it, gradient CTA pinned low. */
+:root {
+  color-scheme: dark;
+  /* surfaces */
+  --bg: #060912;            /* screen background (sampled #04070c-#070918) */
+  --bg-2: #0c1121;          /* secondary background */
+  --surface: #131a2c;       /* cards, message bubbles */
+  --surface-2: #1b2338;     /* elevated rows, inactive tabs */
+  --surface-glass: rgba(16, 22, 40, 0.72);
+  --border: rgba(150, 165, 255, 0.13);
+  --border-strong: rgba(150, 165, 255, 0.26);
+  /* accents */
+  --violet: #7d52fb;        /* sampled #8550fa */
+  --indigo: #3b48ff;        /* sampled #3846ff */
+  --blue: #3a62fb;          /* Chat tile #3861fb */
+  --pink: #e88af8;          /* active nav */
+  --cyan: #22c3d6;          /* goal progress */
+  --teal: #0b5f55;          /* Call tile */
+  --teal-edge: #19c79a;
+  --plum: #5b1866;          /* Activities tile */
+  --plum-edge: #c35de0;
+  --online: #2de39c;
+  --danger: #f0414f;
+  --grad: linear-gradient(90deg, #8a55fa 0%, #5a4dfd 55%, #3b48ff 100%);
+  --grad-blue: linear-gradient(90deg, #4b62fb 0%, #3a44fb 100%);
+  --grad-violet: linear-gradient(90deg, #8a48f6 0%, #6c3cf4 100%);
+  --grad-me: linear-gradient(135deg, #5a52f2 0%, #3d3fe6 100%);
+  /* text */
+  --text: #f4f5fb;
+  --muted: #9aa3c0;
+  --faint: #6b7493;
+  /* type */
+  --font: "Inter", "Inter Display", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fs-xs: 11px;
+  --fs-sm: 12.5px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 19px;
+  --fs-2xl: 24px;
+  --fs-3xl: 30px;
+  /* shape */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 20px;
+  --r-pill: 999px;
+  --gutter: 16px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --glow: 0 0 0 1.5px var(--violet), 0 0 18px rgba(125, 82, 251, 0.45);
+}

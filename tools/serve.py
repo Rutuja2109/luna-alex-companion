@@ -20,6 +20,12 @@ class H(http.server.SimpleHTTPRequestHandler):
             n = int(self.headers.get('Content-Length', 0)); body = json.loads(self.rfile.read(n) or b'{}')
             out = json.dumps({'image': body.get('referenceImage')}).encode()
             self.send_response(200); self.send_header('Content-Type', 'application/json'); self.send_header('Content-Length', str(len(out))); self.end_headers(); self.wfile.write(out); return
+        if self.path == '/mock/ai':
+            import json
+            n = int(self.headers.get('Content-Length', 0)); body = json.loads(self.rfile.read(n) or b'{}')
+            ok = 'Reply with ONLY this JSON' in body.get('prompt', '')
+            out = json.dumps({'text': json.dumps({'messages': ['hey from the self-hosted AI path' if ok else 'bad prompt'], 'react': None, 'selfie': False, 'remember': None})}).encode()
+            self.send_response(200); self.send_header('Content-Type', 'application/json'); self.send_header('Content-Length', str(len(out))); self.end_headers(); self.wfile.write(out); return
         self.send_response(404); self.end_headers()
 port = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
 socketserver.TCPServer.allow_reuse_address = True

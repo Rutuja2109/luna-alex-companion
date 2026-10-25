@@ -18,7 +18,8 @@ export function render(ctx) {
       <div data-tabs></div>
       <div class="field"><label class="sr" for="mq">Search memories</label><input id="mq" class="input" type="search" placeholder="Search memories" data-q></div>
       <div data-grid></div>
-      <p class="xs muted center mt12">Only what you save is kept. ${char.name} can use notes and preferences in chat.</p>
+      <section class="knows" data-knows aria-label="What ${char.name} knows"></section>
+      <p class="xs muted center mt12">Only what you save is kept. Everything ${char.name} uses when replying is listed on this screen.</p>
     </div>
     ${BottomNav('memories')}
   </section>`);
@@ -26,7 +27,29 @@ export function render(ctx) {
   const list = () => ctx.store.get().memories.filter((m) => m.companionId === char.id || !m.companionId)
     .filter((m) => tab === 'all' || (tab === 'notes' ? !['photo', 'voice'].includes(m.kind) : m.kind === tab))
     .filter((m) => !q || `${m.title} ${m.text || ''}`.toLowerCase().includes(q));
+  // Everything else the AI receives besides saved memories: the running chat
+  // summary and your shared moments. Visible, editable, deletable.
+  const paintKnows = () => {
+    const st = ctx.store.get();
+    const summary = st.chatMeta?.[char.id]?.summary || '';
+    const moments = (st.events || []).filter((e) => e.companionId === char.id && e.closed).slice(-8).reverse();
+    el.querySelector('[data-knows]').innerHTML = `<h2 class="section-title">What ${esc(char.name)} knows</h2>
+      <div class="card"><div class="kn-h"><span>Notes from older chats</span>${summary ? '<span><button data-kn="edit-sum">Edit</button> · <button data-kn="clear-sum">Clear</button></span>' : ''}</div>
+        <div class="kn-b">${summary ? esc(summary) : `Nothing yet. After long chats, ${esc(char.name)} keeps short notes here so she remembers.`}</div></div>
+      <div class="card"><div class="kn-h"><span>Time spent together</span></div>
+        ${moments.length ? moments.map((e) => `<div class="kn-row"><span class="grow">${esc(e.text || e.label)} · ${new Date(e.ts).toLocaleDateString([], { day: 'numeric', month: 'short' })}</span><button data-kn="del-ev" data-id="${e.id}" aria-label="Forget this moment">Forget</button></div>`).join('') : '<div class="kn-b">Nothing yet.</div>'}</div>`;
+  };
+  el.addEventListener('click', async (e) => {
+    const k = e.target.closest('[data-kn]')?.dataset.kn; if (!k) return;
+    if (k === 'clear-sum') { ctx.store.update((st) => { st.chatMeta[char.id].summary = ''; }, { silent: true }); paintKnows(); toast('Notes cleared'); }
+    if (k === 'del-ev') { const id = e.target.closest('[data-id]').dataset.id; ctx.store.update((st) => { st.events = st.events.filter((x) => x.id !== id); ctx.store.tombstone('events', id); }, { silent: true }); paintKnows(); toast(`${char.name} won't bring that up again`); }
+    if (k === 'edit-sum') sheet((sh, close) => {
+      sh.innerHTML = `<h2>Notes from older chats</h2><div class="field"><label for="sum">What ${esc(char.name)} remembers</label><textarea id="sum" class="input" rows="8" maxlength="1500">${esc(ctx.store.get().chatMeta[char.id].summary)}</textarea></div><button class="btn btn-primary" data-ok>Save</button>`;
+      sh.querySelector('[data-ok]').onclick = () => { ctx.store.update((st) => { st.chatMeta[char.id].summary = sh.querySelector('#sum').value.trim(); }, { silent: true }); close(); paintKnows(); toast('Saved'); };
+    });
+  });
   const paint = () => {
+    paintKnows();
     el.querySelector('[data-tabs]').innerHTML = Seg(TABS, tab, { cls: 'sm', name: 't' });
     const items = list();
     const g = el.querySelector('[data-grid]');
@@ -67,7 +90,7 @@ export function render(ctx) {
       s.querySelector('[data-del]').onclick = async () => {
         close();
         if (await confirmSheet({ title: 'Delete this memory?', body: `“${m.title}” will be removed for good and ${char.name} won't use it anymore.`, ok: 'Delete', danger: true })) {
-          ctx.store.update((st) => { st.memories = st.memories.filter((x) => x.id !== m.id); }, { silent: true });
+          ctx.store.update((st) => { st.memories = st.memories.filter((x) => x.id !== m.id); ctx.store.tombstone('memories', m.id); }, { silent: true });
           paint(); toast('Memory deleted');
         }
       };
@@ -90,7 +113,7 @@ export function render(ctx) {
         if (!title) { s.querySelector('[data-err]').hidden = false; s.querySelector('#mt').setAttribute('aria-invalid', 'true'); return; }
         const kind = img && s.querySelector('#mk').value === 'moment' ? 'photo' : s.querySelector('#mk').value;
         const data = { kind, title, text: s.querySelector('#mx').value.trim(), img };
-        if (m) ctx.store.update((st) => { Object.assign(st.memories.find((x) => x.id === m.id), data); }, { silent: true });
+        if (m) ctx.store.update((st) => { Object.assign(st.memories.find((x) => x.id === m.id), data, { u: Date.now() }); }, { silent: true });
         else addMemory(data);
         close(); paint(); toast(m ? 'Memory updated' : 'Memory saved');
       };

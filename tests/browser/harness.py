@@ -17,16 +17,20 @@ sample.json = (input, opts) => new Promise((resolve, reject) => {
     if (m === 'hang') return;
     if (m === 'garbage') return resolve({ nonsense: true });
     const pend = (input.match(/they sent (\d+) in a row/) || [0, 1])[1];
-    resolve({ messages: [`reply #${n} to ${pend}`], react: null, selfie: false, remember: null });
+    const convo = (input.split('<conversation>')[1] || '').split('</conversation>')[0];
+    const lastUser = convo.trim().split('\n').filter((l) => l.startsWith('User:')).pop() || '';
+    const remember = /applying for an MBA/i.test(lastUser) ? { title: 'Applying for an MBA', text: 'deadline Jan 15' } : null;
+    resolve({ messages: [`reply #${n} to ${pend}`], react: null, selfie: false, remember });
   }, window.__delay);
   opts.signal?.addEventListener('abort', () => { clearTimeout(t); reject({ code: 'aborted' }); });
 });
 sample.limits = async () => ({});
-window.__db = window.__db || {}; window.__dbFail = window.__dbFail || false;
+window.__db = window.__db || {};
+const dbFail = () => window.__dbFail || localStorage.getItem('__dbFail') === '1';
 const doc = (path) => ({
-  get: async () => { if (window.__dbFail) throw { code: 'unavailable' }; const v = JSON.parse(localStorage.getItem('__fakedb:' + path) || 'null'); return { exists: !!v, data: () => v }; },
-  set: async (data) => { if (window.__dbFail) throw { code: 'unavailable' }; localStorage.setItem('__fakedb:' + path, JSON.stringify(data)); window.__dbWrites = (window.__dbWrites || 0) + 1; },
-  delete: async () => { if (window.__dbFail) throw { code: 'unavailable' }; localStorage.removeItem('__fakedb:' + path); },
+  get: async () => { if (dbFail()) throw { code: 'unavailable' }; const v = JSON.parse(localStorage.getItem('__fakedb:' + path) || 'null'); return { exists: !!v, data: () => v }; },
+  set: async (data) => { if (dbFail()) throw { code: 'unavailable' }; localStorage.setItem('__fakedb:' + path, JSON.stringify(data)); window.__dbWrites = (window.__dbWrites || 0) + 1; },
+  delete: async () => { if (dbFail()) throw { code: 'unavailable' }; localStorage.removeItem('__fakedb:' + path); },
 });
 const db = { doc };
 const user = { id: async () => window.__uid || 'user-A', isOwner: () => true };

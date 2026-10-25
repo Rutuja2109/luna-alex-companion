@@ -16,6 +16,7 @@
 import { PERSONALITIES, COMM_STYLES } from '../data/characters.js';
 import * as routine from '../engine/routine.js';
 import * as store from '../state/store.js';
+import { CONFIG } from '../config.js';
 
 export const TIMEOUT_MS = 30000;
 export const REACTIONS = ['❤️', '😂', '🥹', '😮', '😢', '👍', '🔥'];
@@ -26,10 +27,38 @@ let offlineReason = ''; // 'unavailable' | 'not_granted'
 export const getMode = () => mode;
 export const getOfflineReason = () => offlineReason;
 
+// A self-hosted endpoint (see server/worker.js) behaves like the artifact's
+// `sample` capability: POST {prompt, tier} -> {json} | {text}. API keys stay
+// on that server.
+function httpSample(endpoint) {
+  const call = async (input, opts = {}) => {
+    let res;
+    try {
+      res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: opts.signal,
+        body: JSON.stringify({ prompt: typeof input === 'string' ? input : input.map((t) => t.content).join('\n\n'), tier: opts.modelTier || 'default' }) });
+    } catch (e) { if (opts.signal?.aborted) throw { code: 'aborted' }; throw { code: 'network', message: String(e?.message || e) }; }
+    if (res.status === 429) throw { code: 'rate_limited' };
+    if (!res.ok) throw { code: 'network', message: `AI service error ${res.status}` };
+    return res.json();
+  };
+  const sample = async (input, opts) => { const j = await call(input, opts); return { text: j.text ?? JSON.stringify(j.json) }; };
+  sample.json = async (input, opts) => {
+    const j = await call(input, opts);
+    if (j.json !== undefined) return j.json;
+    try { const t = String(j.text || ''); return JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); }
+    catch { throw { code: 'invalid_json', text: j.text }; }
+  };
+  sample.limits = async () => ({});
+  return sample;
+}
+
 function getSample() {
   if (!samplePromise) {
     samplePromise = (async () => {
-      try { return window.claude?.use ? await window.claude.use('sample') : null; } catch { return null; }
+      try {
+        if (window.claude?.use) { const s = await window.claude.use('sample'); if (s) return s; }
+      } catch { /* fall through */ }
+      return CONFIG.aiService?.endpoint ? httpSample(CONFIG.aiService.endpoint) : null;
     })();
   }
   return samplePromise;

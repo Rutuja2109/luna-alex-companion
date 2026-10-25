@@ -746,3 +746,19 @@ select.input { appearance: none; }
 .call[data-state="listening"] .call-state::before, .call[data-state="muted"] .call-state::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: var(--online); box-shadow: 0 0 8px var(--online); animation: pulse 1.4s infinite; }
 .call[data-state="muted"] .call-state::before { background: #f6c773; box-shadow: none; animation: none; }
 .call[data-state="failed"] .call-state { color: #ffb3b9; }
+
+/* ---------- sync status (phase 5) ---------- */
+.sync-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 10px; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--border); font-size: var(--fs-sm); color: var(--muted); }
+.sync-row .btn { width: auto; }
+.dot-sync { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex: none; }
+.sync-row.synced .dot-sync { background: var(--online); }
+.sync-row.syncing .dot-sync { background: #8a7dff; animation: pulse 1.2s infinite; }
+.sync-row.error { color: #ffb3b9; border-color: rgba(240, 65, 79, .45); }
+.sync-row.error .dot-sync { background: var(--danger); }
+.knows { display: grid; gap: 8px; margin-top: 18px; }
+.knows .card { padding: 12px; }
+.knows .kn-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--muted); }
+.knows .kn-b { font-size: var(--fs-sm); line-height: 1.5; white-space: pre-line; margin-top: 6px; }
+.knows .kn-row { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); padding: 6px 0; border-top: 1px solid var(--border); }
+.knows .kn-row:first-of-type { border-top: 0; }
+.knows .kn-row button, .knows .kn-h button { color: var(--muted); font-size: var(--fs-xs); text-decoration: underline; flex: none; }

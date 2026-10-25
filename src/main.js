@@ -53,7 +53,8 @@ const s = store.get();
 if (token && router.ROUTE_NAMES.includes(token)) router.go(token);
 else router.go(s.onboarded ? 'home' : 'welcome');
 
-store.connectCloud().then((synced) => {
+// ?demo= is a local QA seed: never sync it into a real account.
+(qs.get('demo') ? Promise.resolve(false) : store.connectCloud()).then((synced) => {
   if (synced && store.get().onboarded && router.current()?.name === 'welcome') router.go('home', {}, { reset: true });
 });
 

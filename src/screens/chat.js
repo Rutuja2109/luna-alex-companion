@@ -394,7 +394,7 @@ export function render(ctx) {
         if (x === 'clear') {
           const { confirmSheet } = await import('../ui/components.js');
           if (await confirmSheet({ title: 'Clear chat history?', body: `This deletes every message with ${char.name} on this device. Memories you saved stay.`, ok: 'Clear history', danger: true })) {
-            ctx.store.update((st) => { st.chats[cid] = []; }, { silent: true }); paint(); toast('Chat history cleared');
+            ctx.store.update((st) => { st.chats[cid] = []; st.chatMeta[cid] = {}; ctx.store.tombstone('chats', cid); }, { silent: true }); paint(); toast('Chat history cleared');
           }
         }
       });

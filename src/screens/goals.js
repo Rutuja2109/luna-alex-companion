@@ -34,7 +34,7 @@ export function render(ctx) {
     const t = e.target.closest('[data-t]'); if (t) { tab = t.dataset.t; paint(); return; }
     const row = e.target.closest('[data-g]');
     if (row && e.target.closest('[data-done]')) {
-      ctx.store.update((s) => { const g = s.goals.find((x) => x.id === row.dataset.g); if (g.status === 'done') { g.status = 'active'; } else { g.status = 'done'; g.progress = 100; } }, { silent: true });
+      ctx.store.update((s) => { const g = s.goals.find((x) => x.id === row.dataset.g); g.u = Date.now(); if (g.status === 'done') { g.status = 'active'; } else { g.status = 'done'; g.progress = 100; } }, { silent: true });
       paint(); toast(tab === 'done' ? 'Moved back to active' : 'Goal completed 🎉'); return;
     }
     if (row && e.target.closest('[data-open]')) edit(ctx.store.get().goals.find((x) => x.id === row.dataset.g));
@@ -55,7 +55,7 @@ export function render(ctx) {
         if (!title) { s.querySelector('[data-err]').hidden = false; s.querySelector('#gt').setAttribute('aria-invalid', 'true'); return; }
         const progress = +s.querySelector('#gp').value;
         ctx.store.update((st) => {
-          if (g) Object.assign(st.goals.find((x) => x.id === g.id), { title, progress, status: progress >= 100 ? 'done' : g.status === 'done' && progress < 100 ? 'active' : g.status });
+          if (g) Object.assign(st.goals.find((x) => x.id === g.id), { u: Date.now(), title, progress, status: progress >= 100 ? 'done' : g.status === 'done' && progress < 100 ? 'active' : g.status });
           else st.goals.push({ id: 'g' + Date.now().toString(36), title, progress, status: progress >= 100 ? 'done' : 'active', tone: TONES[st.goals.length % 3] });
         }, { silent: true });
         close(); paint(); toast(g ? 'Goal updated' : 'Goal added');
@@ -64,7 +64,7 @@ export function render(ctx) {
       s.querySelector('[data-del]')?.addEventListener('click', async () => {
         close();
         if (await confirmSheet({ title: 'Delete goal?', body: `“${g.title}” will be removed.`, ok: 'Delete', danger: true })) {
-          ctx.store.update((st) => { st.goals = st.goals.filter((x) => x.id !== g.id); }, { silent: true }); paint(); toast('Goal deleted');
+          ctx.store.update((st) => { st.goals = st.goals.filter((x) => x.id !== g.id); ctx.store.tombstone('goals', g.id); }, { silent: true }); paint(); toast('Goal deleted');
         }
       });
     });

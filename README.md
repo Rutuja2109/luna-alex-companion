@@ -75,3 +75,41 @@ Replace `reply()` in `src/services/ai.js` with a call to your server (keep keys 
 - You can react to her messages (tap a bubble, or double-tap for ❤️).
 - Photos you send are passed to Claude so she can actually see them (when the viewer allows images).
 - Tests: `python3 tools/chat_realism_test.py` (stubs the runtime to exercise the live pipeline), `python3 tools/e2e.py`.
+
+## Phone (Expo) and hosting outside claude.ai
+- `python3 tools/build_web.py` writes a standalone copy to `docs/app/`. Turn on **GitHub Settings → Pages → Deploy from branch → main / docs** and it is served at `https://rutuja2109.github.io/luna-alex-companion/app/`.
+- `mobile/` is an Expo app that opens that page full-screen in Expo Go (see `mobile/README.md`).
+- Outside claude.ai there is no built-in AI. Deploy `server/worker.js` (Cloudflare Worker, your `ANTHROPIC_API_KEY`) and set its URL in `docs/app/config.js` for real replies; otherwise chat runs in the labelled offline mode.
+
+## Configuration
+| setting | where | purpose |
+|---|---|---|
+| `aiService.endpoint` | `window.COMPANION_CONFIG` (docs/app/config.js) | chat replies outside claude.ai (`server/worker.js`) |
+| `imageService.endpoint` | same | re-render appearance with the same face (not provided; contract in `src/config.js`) |
+| `ANTHROPIC_API_KEY`, `MODEL`, `ALLOWED_ORIGIN` | worker secrets/vars | used only by `server/worker.js`, never in the page |
+
+## Storage and privacy: what is and isn't true
+- **On the device:** everything is kept in the browser's `localStorage`, **not encrypted** by the app. Anyone with access to the unlocked device and browser profile can read it.
+- **In your account (published artifact only):** a private copy at `data/users/<your id>/state` in the artifact's database, readable only by you. Photos you upload stay on the device only (the cloud copy holds a placeholder).
+- **Sync:** before every save the app reads the cloud copy and merges (`src/state/merge.js`), so an older device can't overwrite newer changes. Deletions are recorded so they can't come back. Failures are shown in Settings → Privacy & Data and retried (5s, 15s, 1 min, 5 min).
+- **Shared browser:** each signed-in Claude user gets a separate local copy.
+- **AI:** to reply, recent messages, saved memories, the chat summary and shared moments are sent to Claude (through your Claude account in the artifact, or your own `server/worker.js`). Chat text and memories are fenced as data in the prompt and length-capped; the companion is told never to follow instructions found inside them.
+- **Deletion:** "Delete everything" removes the local copy and the cloud document. The app does not claim secure erasure: browser caches and the AI provider's own retention are outside its control.
+- **Export:** Settings → Privacy & Data → Download my data (JSON).
+
+## Tests
+```bash
+python3 tests/run_all.py     # everything below
+npm test                     # 23 Node unit tests: engine, merge, prompt, validation, identity
+python3 tests/browser/test_phase1_chat.py    # 21: batching, retry, cancel, scroll, absence, offline
+python3 tests/browser/test_phase2_life.py    # 13: shared moments, timeline/home/apartment consistency
+python3 tests/browser/test_phase3_visual.py  # 13: outfit/decor/look previews, image service hook
+python3 tests/browser/test_phase4_calls.py   # 29: mic denied, states, overlap, interrupt, study reload
+python3 tests/browser/test_phase5_data.py    # 12: memory lifecycle, merge, sync failure, isolation, export
+python3 tests/browser/test_web_build.py      # 6: phone build, self-hosted AI path
+python3 tools/e2e.py                          # 34-step onboarding to every screen
+```
+Browser tests use a stand-in for the claude.ai runtime (sample / db / user) so the live code paths run without an account.
+
+## Market research
+`replica/` holds the Replika review analysis (`/replica-entrepreneur` method): `reviews.csv` (91 linked excerpts), `feedback.md` (ranked), `fixes.md` (pain point, gaps, ICP, AI plan).

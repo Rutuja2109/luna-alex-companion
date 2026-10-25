@@ -81,9 +81,16 @@ export function render(ctx) {
       sheet((sh, close) => {
         const draw = () => {
           const st = ctx.store.get();
+          const sy = store.getSync();
+          const syncLine = sy.status === 'local' ? 'Saved on this device only'
+            : sy.status === 'syncing' ? 'Saving to your account…'
+            : sy.status === 'synced' ? `Saved to your account · ${new Date(sy.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+            : sy.message;
           sh.innerHTML = `<h2>Privacy & Data</h2>
-            <p>${char.name} is a fictional AI character. Your chats, memories and settings are stored on this device${window.claude ? ' and in your private space on your Claude account' : ''}. Nothing is shared with other people.</p>
+            <p>${esc(char.name)} is a fictional AI character. Your chats, memories and settings are stored on this device${sy.status !== 'local' ? ' and in a private copy on your Claude account' : ''}, not encrypted beyond what the browser and Claude provide. To reply, your recent messages and saved memories are sent to the AI service. Nothing is shared with other people.</p>
+            <div class="sync-row ${sy.status}" data-sync role="status"><span class="dot-sync"></span><span class="grow">${esc(syncLine)}</span>${sy.status === 'error' && sy.where === 'cloud' ? '<button class="btn btn-ghost btn-sm" data-x2="retry">Retry now</button>' : ''}</div>
             <div class="list">
+              <button class="list-row" data-x2="export"><span class="ic">${icon('upload')}</span><span class="grow">Download my data</span><span class="val">JSON</span></button>
               ${toggleRow('memoryMode', 'Allow saving memories', 'When off, nothing new can be saved to Memories', st.settings.memoryMode !== 'off')}
               <button class="list-row" data-x="clearchat"><span class="ic">${icon('trash')}</span><span class="grow">Delete chat history with ${char.name}</span></button>
               <button class="list-row" data-x="clearmem"><span class="ic">${icon('trash')}</span><span class="grow">Delete all memories</span></button>
@@ -91,15 +98,19 @@ export function render(ctx) {
             </div>`;
         };
         draw();
+        const off = store.onSync(() => { if (document.contains(sh)) draw(); else off(); });
         sh.addEventListener('click', async (ev) => {
+          const x2 = ev.target.closest('[data-x2]')?.dataset.x2;
+          if (x2 === 'retry') { store.pushNow(); return; }
+          if (x2 === 'export') { exportMyData(); return; }
           if (ev.target.closest('[data-tg]')) { ctx.store.update((st) => { st.settings.memoryMode = st.settings.memoryMode === 'off' ? 'ask' : 'off'; }, { silent: true }); draw(); return; }
           const x = ev.target.closest('[data-x]')?.dataset.x; if (!x) return;
           close();
           const msgs = { clearchat: ['Delete chat history?', `Every message with ${char.name} is removed.`], clearmem: ['Delete all memories?', 'Every saved memory is removed for good.'], reset: ['Delete everything?', 'Companions, chats, memories, goals and settings are erased. This can\'t be undone.'] };
           if (!(await confirmSheet({ title: msgs[x][0], body: msgs[x][1], ok: 'Delete', danger: true }))) return;
-          if (x === 'clearchat') ctx.store.update((st) => { st.chats[char.id] = []; }, { silent: true });
-          if (x === 'clearmem') ctx.store.update((st) => { st.memories = []; }, { silent: true });
-          if (x === 'reset') { store.replace(store.initialState()); ctx.go('welcome', {}, { reset: true }); }
+          if (x === 'clearchat') ctx.store.update((st) => { st.chats[char.id] = []; st.chatMeta ||= {}; st.chatMeta[char.id] = {}; store.tombstone('chats', char.id); }, { silent: true });
+          if (x === 'clearmem') ctx.store.update((st) => { st.memories.forEach((m) => store.tombstone('memories', m.id)); st.memories = []; Object.values(st.chatMeta || {}).forEach((cm) => { cm.summary = ''; }); }, { silent: true });
+          if (x === 'reset') { const ok = await store.deleteCloud(); store.replace({ ...store.initialState(), ownerId: store.get().ownerId }); try { localStorage.removeItem('companion.state.v1'); } catch {} if (!ok) { toast("Deleted on this device, but the copy in your account couldn't be deleted yet. Try again from Privacy & Data."); } ctx.go('welcome', {}, { reset: true }); return; }
           toast('Deleted');
         });
       });
@@ -118,5 +129,22 @@ export function render(ctx) {
       }
     }
   });
+  // Export: the artifact's download capability when available, a normal
+  // file download elsewhere, and copy-to-clipboard as the last resort.
+  async function exportMyData() {
+    const json = store.exportData();
+    const filename = `luna-alex-data-${new Date().toISOString().slice(0, 10)}.json`;
+    try {
+      const dl = window.claude?.use ? await window.claude.use('downloads') : null;
+      if (dl) { await dl.save({ filename, data: json }); toast('Export ready'); return; }
+    } catch (e) { if (e?.code === 'declined' || e?.code === 'not_granted') { toast('Download cancelled'); return; } }
+    if (!window.claude) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' })); a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove(); toast('Downloaded ' + filename); return;
+    }
+    try { await navigator.clipboard.writeText(json); toast('Your data was copied as JSON. Paste it into a file to keep it.'); }
+    catch { toast("Export isn't available in this view."); }
+  }
   return el;
 }

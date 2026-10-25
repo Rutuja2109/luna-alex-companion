@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Luna & Alex",
+    "slug": "luna-alex-companion",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#060912",
+    "splash": { "backgroundColor": "#060912", "resizeMode": "contain" },
+    "ios": { "supportsTablet": false, "bundleIdentifier": "com.rutuja.lunaalex" },
+    "android": { "package": "com.rutuja.lunaalex", "backgroundColor": "#060912" }
+  }
+}
