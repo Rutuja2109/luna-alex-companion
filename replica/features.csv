@@ -1,0 +1,46 @@
+feature,area,priority,original,clone,notes
+Welcome / get started,onboarding,must,yes,yes,S01; no account needed (data stays on device)
+Your name,onboarding,must,yes,yes,S02
+Pronouns,onboarding,should,yes,yes,S02; sent to the AI
+Age range with adults-only gate,onboarding,must,yes,yes,Under 18 is stopped
+Companion role (friend / partner / mentor),onboarding,must,yes,yes,Plus Study buddy; all free (original gates statuses behind Pro)
+Choose companion gender,onboarding,must,yes,yes,Luna or Alex (characters are fixed; original lets you name a new one)
+Style your companion,onboarding,must,yes,yes,6 outfits per character
+Personality traits,onboarding,should,yes,yes,Up to 2
+Goals (multi-select),onboarding,should,yes,yes,Sent to the AI
+Interests,onboarding,should,yes,yes,Sent to the AI
+Building / meet screen,onboarding,should,yes,yes,With AI disclosure
+Paywall in onboarding,onboarding,skip,yes,skip,Deliberately not cloned (reviews: "pay just to chat")
+Main screen: companion in room + chat,chat,must,yes,yes,S07
+Level and XP bar in header,progress,must,yes,yes,Levels never go down
+Coins and gems balance,store,must,yes,yes,Earned only
+Chat with typing and multi-bubble replies,chat,must,yes,yes,Shared AI engine
+Upvote / downvote replies,chat,must,yes,yes,Fed back into the prompt
+Emoji reactions,chat,should,yes,yes,
+Companion asks to remember facts,memory,must,yes,yes,You approve each one
+Memory screen by category,memory,must,yes,yes,Add / edit / delete; nothing hidden
+Diary written by the companion,diary,must,yes,yes,Daily; AI or labelled offline template; edit / rate / forget
+Relationship status switch,profile,must,yes,yes,All free
+Backstory (500 chars),profile,must,yes,yes,Fenced as data in the prompt
+Traits and interests on profile,profile,should,yes,yes,
+Voice selection,profile,should,yes,yes,Device voices only
+Voice call,call,must,yes,yes,Device speech in/out + typed fallback
+Post-call star rating,call,should,yes,yes,
+Clothes customization,customize,must,yes,yes,All outfits free
+Room customization,customize,must,yes,yes,Apartment styles free; decor in store
+Store with currency prices,store,must,yes,yes,Gifts + room decor
+Insufficient funds prompt,store,should,yes,yes,Explains how to earn (no top-up)
+Daily quests,quests,must,yes,yes,3 per day
+Streaks,quests,should,unknown,yes,Ours
+Activities list,activities,must,yes,yes,7 activities (reflection / gratitude / 20 questions / story / practice / breathing / study)
+Mood tracking,wellbeing,must,yes,yes,Daily check-in + 7-day view
+Guided meditations,wellbeing,could,yes,partial,One breathing break
+Texts first (proactive),engagement,must,partial,partial,While the app is open (and background-tab notification); closed-app push needs a server
+Settings: data export,settings,must,unknown,yes,
+Settings: delete account / everything,settings,must,yes,yes,
+Version history,settings,could,yes,no,
+Image generator,extras,could,yes,no,Needs an image service (integration point exists in main app)
+AR / VR,extras,skip,yes,skip,Hardware
+Advanced AI mode (paid),extras,skip,yes,skip,Always the best available model
+Real-money purchases,store,skip,yes,skip,Deliberately not cloned
+3D avatar,visual,skip,yes,skip,Owned by the original; we use Luna & Alex art

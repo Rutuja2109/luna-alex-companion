@@ -6,7 +6,7 @@ import shutil, os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'docs', 'app')
 shutil.rmtree(OUT, ignore_errors=True)
-for d in ('src', 'css', 'assets'):
+for d in ('src', 'css', 'assets', 'clone'):
     shutil.copytree(os.path.join(ROOT, d), os.path.join(OUT, d))
 body = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
 head = '''<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -16,6 +16,9 @@ head = '''<!doctype html><html lang="en"><head><meta charset="utf-8">
 <script src="config.js"></script>
 '''
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8').write(head + body + '\n</html>\n')
+clone = open(os.path.join(ROOT, 'clone.html'), encoding='utf-8').read()
+clone = clone.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">\n<script src="config.js"></script>', 1)
+open(os.path.join(OUT, 'clone.html'), 'w', encoding='utf-8').write(clone)
 cfg = os.path.join(OUT, 'config.js')
 open(cfg, 'w').write('''// Optional. Point the app at your own AI proxy (server/worker.js) to get real
 // Claude replies on GitHub Pages / in the Expo app:

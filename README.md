@@ -113,3 +113,14 @@ Browser tests use a stand-in for the claude.ai runtime (sample / db / user) so t
 
 ## Market research
 `replica/` holds the Replika review analysis (`/replica-entrepreneur` method): `reviews.csv` (91 linked excerpts), `feedback.md` (ranked), `fixes.md` (pain point, gaps, ICP, AI plan).
+
+## Replika-style structural clone (`clone.html`)
+
+A second app in this repo that follows Replika's screens and flows (reverse-engineered with [replica-skill](https://github.com/Jakeschincariol/replica-skill), clean-room from public sources), built with Luna & Alex's own art, wording and look. It keeps its own data (`clone.state.v1`), separate from the main app.
+
+- Open locally: `python3 tools/serve.py 8000` then http://localhost:8000/clone.html (`?demo=luna` seeds a companion a few days in).
+- On a phone: after enabling GitHub Pages, `https://rutuja2109.github.io/luna-alex-companion/app/clone.html`.
+- Screens: 12-step onboarding (adults only, no paywall) → companion in her room with chat → profile (level, relationship status, traits, interests, backstory, voice, mood week) → diary → memory → store (gifts, room decor; earned coins only) → customize → activities & daily quests → voice call with rating → settings (texts first, export, delete).
+- Research and scoring: `replica/recon.md`, `replica/features.csv` (parity 96.1/100 with the skill's `parity.py`), `replica/build-log.md`.
+- Tests: `tests/bond.test.js`, `tests/browser/test_clone.py`.
+- Not included on purpose: Replika's name, logo, 3D avatars, copy and colours; paywalls and real-money purchases. Messages while the app is closed need a push server.
