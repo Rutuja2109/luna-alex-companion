@@ -737,3 +737,12 @@ select.input { appearance: none; }
 .live-scene .decor-chip { top: auto; bottom: 74px; }
 .cust-photo .tint { position: absolute; inset: 0; mix-blend-mode: color; opacity: .22; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .decor-fairy, .decor-candles { animation: none; } }
+
+/* ---------- call states (phase 4) ---------- */
+.mic-note { position: absolute; left: 14px; right: 118px; top: calc(78px + env(safe-area-inset-top, 0px)); z-index: 4; margin: 0; font-size: var(--fs-sm); line-height: 1.4; color: #ffe2b0; background: rgba(40, 28, 10, .82); border: 1px solid rgba(240, 180, 65, .45); padding: 8px 12px; border-radius: 12px; backdrop-filter: blur(8px); }
+.interrupt { justify-self: center; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--r-pill); background: rgba(16, 22, 40, .8); border: 1px solid var(--border-strong); font-size: var(--fs-sm); }
+.interrupt svg { width: 12px; height: 12px; }
+.call .fail-row { background: rgba(60, 14, 22, .88); backdrop-filter: blur(8px); }
+.call[data-state="listening"] .call-state::before, .call[data-state="muted"] .call-state::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: var(--online); box-shadow: 0 0 8px var(--online); animation: pulse 1.4s infinite; }
+.call[data-state="muted"] .call-state::before { background: #f6c773; box-shadow: none; animation: none; }
+.call[data-state="failed"] .call-state { color: #ffb3b9; }
