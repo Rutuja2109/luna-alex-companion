@@ -2,7 +2,7 @@
 import { h, Header, Seg, esc, ago } from '../ui/components.js';
 import { ROOMS } from '../data/characters.js';
 import * as routine from '../engine/routine.js';
-import { roomImg, homePanel, bindHome, lightFilter, styleImg } from './homestyle.js';
+import { roomImg, homePanel, bindHome, lightFilter, styleImg, decorLayers } from './homestyle.js';
 
 export function render(ctx) {
   const { char, cfg } = ctx;
@@ -23,7 +23,7 @@ export function render(ctx) {
     const body = el.querySelector('[data-body]');
     const home = ctx.store.get().companions[char.id].home;
     if (tab === 'rooms') {
-      body.innerHTML = `<div class="photo-card room-hero"><img data-hero src="${styleImg(home.style)}" alt="" style="filter:${lightFilter(home.lighting)}"></div>
+      body.innerHTML = `<div class="photo-card room-hero"><img data-hero src="${styleImg(home.style)}" alt="" style="filter:${lightFilter(home.lighting)}">${decorLayers(home)}</div>
         <div class="seg sm mt12" role="tablist">${['apartment', 'room', 'decor'].map((t) => `<button data-sub="${t}" aria-selected="${t === (el._sub || 'apartment')}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div>
         <div class="mt12">${homePanel(char, home, el._sub || 'apartment')}</div>`;
       return;
@@ -36,6 +36,7 @@ export function render(ctx) {
     body.innerHTML = `
       <div class="photo-card live-scene">
         <img src="${img}" alt="${here ? `${char.name}, ${act.label}` : `Empty ${rLabel}`}" class="breathe" style="filter:${lightFilter(home.lighting)}">
+        ${decorLayers(home)}
         ${here ? `<span class="live-badge"><i></i>${act.withUser ? 'WITH YOU' : 'SIMULATED · NOW'}</span>` : ''}
         <div class="card row live-card">
           <span class="avatar"><img src="${char.avatar}" alt=""></span>

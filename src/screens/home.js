@@ -7,6 +7,7 @@ export function statusOf(act) {
   return act.id === 'bed' ? { cls: 'idle', text: 'Resting' } : { cls: '', text: 'Online' };
 }
 export function heroFor(char, cfg) {
+  if (cfg?.lookImage) return cfg.lookImage; // rendered by the image service
   const o = char.outfits.find((x) => x.id === cfg?.outfit);
   return o ? o.img : char.hero;
 }

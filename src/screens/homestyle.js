@@ -46,6 +46,19 @@ export function bindHome(root, mutate, repaint) {
     }
   });
 }
+/** Decor shown as light overlays on the room photo (the photo itself is not
+ *  re-rendered; a small chip says so). */
+export function decorLayers(home) {
+  const d = home?.decor || [];
+  if (!d.length) return '';
+  const leaf = '<svg viewBox="0 0 60 80" aria-hidden="true"><path d="M30 80 C28 50 10 40 4 20 C18 26 26 36 30 52 C32 30 40 14 56 6 C52 30 40 44 32 80Z" fill="#2f6b3a"/><path d="M30 80 C30 60 22 48 14 40" stroke="#4f9a5a" stroke-width="2" fill="none"/></svg>';
+  return `<div class="decor" aria-hidden="true">
+    ${d.includes('warm') ? '<span class="decor-warm"></span>' : ''}
+    ${d.includes('fairy') ? '<span class="decor-fairy"></span>' : ''}
+    ${d.includes('candles') ? '<span class="decor-candles"></span>' : ''}
+    ${d.includes('plants') ? `<span class="decor-plant l">${leaf}</span><span class="decor-plant r">${leaf}</span>` : ''}
+  </div><span class="decor-chip">Decor preview</span>`;
+}
 export const lightFilter = (v) => `brightness(${0.7 + v / 250}) saturate(${0.8 + v / 400})`;
 
 export function render(ctx) {
@@ -55,7 +68,7 @@ export function render(ctx) {
     ${Header({ title: `Customize ${c.pronoun.pos === 'her' ? 'Her' : 'His'} Space` })}
     <div class="screen-body">
       <div data-tabs></div>
-      <div class="photo-card room-hero"><img data-hero alt="${c.name}'s apartment"></div>
+      <div class="photo-card room-hero"><img data-hero alt="${c.name}'s apartment"><div data-decor-layer></div></div>
       <div class="mt12" data-panel></div>
     </div>
     <div class="screen-foot"><button class="btn btn-primary" data-next>Continue</button></div>
@@ -66,6 +79,7 @@ export function render(ctx) {
     const hero = el.querySelector('[data-hero]');
     hero.src = tab === 'room' ? roomImg(c, home.room) : styleImg(home.style);
     hero.style.filter = lightFilter(home.lighting);
+    el.querySelector('[data-decor-layer]').innerHTML = decorLayers(home);
     el.querySelector('[data-panel]').innerHTML = homePanel(c, home, tab);
   };
   paint();

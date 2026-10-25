@@ -10,6 +10,10 @@ Run:  python3 tools/extract_assets.py
 """
 from pathlib import Path
 from PIL import Image, ImageFilter, ImageEnhance
+try:
+    import cv2, numpy as np
+except ImportError:  # falls back to Pillow-only resizing
+    cv2 = None
 
 ROOT = Path(__file__).resolve().parent.parent
 REF = ROOT / "reference"
@@ -69,9 +73,9 @@ ASSETS = {
     "wallpapers/coffee.jpg": (C, (601, 924, 661, 966), 6),
     # ---- Alex HD set from board D (supersedes small crops above) ------------
     "characters/alex-call.jpg":   (D, (432, 640, 658, 915), 3),
-    "characters/alex-hero.jpg":   (D, (1205, 128, 1525, 255), 3),
+    "characters/alex-hero.jpg":   (D, (1207, 130, 1519, 255), 3),
     "characters/alex-portrait.jpg": (D, (812, 148, 1030, 288), 3),
-    "characters/alex-select.jpg": (D, (415, 176, 585, 325), 3),
+    "characters/alex-select.jpg": (D, (416, 178, 579, 323), 3),
     "characters/luna-select.jpg": (D, (600, 176, 763, 325), 3),
     "characters/duo-hd.jpg":      (D, (12, 82, 375, 300), 3),
     "scenes/alex-desk-hd.jpg":    (D, (792, 676, 1125, 838), 3),
@@ -98,13 +102,31 @@ for i, n in enumerate(FEMALE):
     ASSETS[f"gallery/{n}.jpg"] = (C, (x0 + 3, y0 + 3, x1 - 3, y1), 4)
 
 
+def enhance(im, scale):
+    """Upscale a small board crop. With OpenCV: denoise JPEG blocking first,
+    upscale in steps with edge-preserving smoothing, then a gentle unsharp.
+    This cleans artefacts; it cannot invent detail a 60-80 px source lacks."""
+    if cv2 is None:
+        im = im.resize((im.width * scale, im.height * scale), Image.LANCZOS)
+        return im.filter(ImageFilter.UnsharpMask(radius=2, percent=70, threshold=2))
+    a = cv2.cvtColor(np.array(im), cv2.COLOR_RGB2BGR)
+    a = cv2.fastNlMeansDenoisingColored(a, None, 4, 4, 5, 15)
+    steps = 1 if scale <= 2 else 2 if scale <= 4 else 3
+    f = scale ** (1 / steps)
+    for _ in range(steps):
+        a = cv2.resize(a, None, fx=f, fy=f, interpolation=cv2.INTER_CUBIC)
+        a = cv2.bilateralFilter(a, 5, 18, 5)
+    g = cv2.GaussianBlur(a, (0, 0), 1.6)
+    a = cv2.addWeighted(a, 1.55, g, -0.55, 0)
+    a = cv2.resize(a, (im.width * scale, im.height * scale), interpolation=cv2.INTER_AREA)
+    return Image.fromarray(cv2.cvtColor(a, cv2.COLOR_BGR2RGB))
+
+
 def main():
     boards = {k: Image.open(REF / k).convert("RGB") for k in (A, B, C, D)}
     for rel, (board, box, scale) in ASSETS.items():
         im = boards[board].crop(box)
-        im = im.resize((im.width * scale, im.height * scale), Image.LANCZOS)
-        im = im.filter(ImageFilter.UnsharpMask(radius=2, percent=70, threshold=2))
-        im = ImageEnhance.Contrast(im).enhance(1.03)
+        im = ImageEnhance.Contrast(enhance(im, scale)).enhance(1.03)
         dest = OUT / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         im.save(dest, quality=86, optimize=True, progressive=True)
