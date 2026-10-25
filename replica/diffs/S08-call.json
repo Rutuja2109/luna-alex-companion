@@ -1,0 +1,57 @@
+{
+  "mode": "layout",
+  "original": {
+    "width": 932,
+    "height": 2014
+  },
+  "clone": {
+    "width": 780,
+    "height": 1688
+  },
+  "compared_at": {
+    "width": 480,
+    "height": 1037
+  },
+  "height_delta_pct": 0.2,
+  "score": 9.4,
+  "verdict": "different",
+  "regions": [
+    {
+      "x": 0,
+      "y": 0,
+      "w": 932,
+      "h": 2014,
+      "cells": 173,
+      "where": "middle centre"
+    },
+    {
+      "x": 621,
+      "y": 0,
+      "w": 310,
+      "h": 310,
+      "cells": 10,
+      "where": "top right"
+    },
+    {
+      "x": 388,
+      "y": 0,
+      "w": 155,
+      "h": 310,
+      "cells": 7,
+      "where": "top centre"
+    },
+    {
+      "x": 233,
+      "y": 1941,
+      "w": 466,
+      "h": 73,
+      "cells": 6,
+      "where": "bottom centre"
+    }
+  ],
+  "files": {
+    "original": "replica/screens/S08-call.png",
+    "clone": "replica/clone-screens/S08-call.png"
+  },
+  "diff_image": "replica/diffs/S08-call.png"
+}

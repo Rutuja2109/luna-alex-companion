@@ -68,7 +68,7 @@ export async function proactive({ force = false } = {}) {
   if (!force && (!quiet || inQuiet(s) || S.now() - (s.lastProactive || 0) < 6 * 3600e3)) return false;
   const char = CHARACTERS[s.cid];
   try {
-    const res = await ai.reply({ char, cfg: cfgFor(s), history: s.chat, memories: s.memories.map((m) => ({ title: m.text, companionId: char.id })), task: 'opener', note: 'You are texting first, unprompted. One short message.', profile: S.profileFor(s) });
+    const res = await ai.reply({ char, cfg: cfgFor(s), history: s.chat, memories: S.memForAI(s), task: 'opener', note: 'You are texting first, unprompted. One short message.', profile: S.profileFor(s) });
     const text = res.parts[0];
     S.addMsg({ from: 'them', text, unread: true, ...(res.offline ? { offline: true } : {}) });
     S.update((st) => { st.lastProactive = S.now(); });

@@ -9,23 +9,28 @@ import { cfgFor, heroImg, celebrate } from '../shared.js';
 export function call(ctx) {
   const { char } = ctx;
   const el = h(`<section class="screen callv">
-    <img class="cv-bg" src="${char.portrait || heroImg(char)}" alt="">
+    <div class="cz-bg" style="position:absolute;inset:-40px;background:url('${char.portrait || heroImg(char)}') center/cover;filter:blur(30px) brightness(.55)"></div>
+    <img class="cv-bg" src="${char.portrait || heroImg(char)}" alt="${esc(char.name)}">
     <div class="cv-fade"></div>
-    <div class="cv-top"><div class="cv-name">${esc(char.name)}</div><div class="cv-t" data-t>Connecting…</div><div class="cv-st" data-st></div></div>
+    <div class="cv-top"><div class="cv-wave" data-wave aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="cv-t" data-t>Connecting…</div><div class="cv-st" data-st></div></div>
+    <div class="cv-pip" data-pip>Camera off</div>
     <div class="cv-cap" data-cap aria-live="polite"></div>
-    <form class="cv-type" data-form><label class="sr" for="say">Say something</label><input id="say" class="input" placeholder="Talk, or type here" autocomplete="off"><button class="ib" aria-label="Send">${icon('send')}</button></form>
-    <div class="cv-ctl">
-      <button class="ctl" data-mute aria-pressed="false">${icon('mic')}<span>Mute</span></button>
-      <button class="ctl end" data-end aria-label="End call">${icon('phoneOff')}<span>End</span></button>
-      <button class="ctl" data-spk aria-pressed="true">${icon('speaker')}<span>Speaker</span></button>
+    <form class="cv-type" data-form><label class="sr" for="say">Say something</label><input id="say" class="input" placeholder="Or type here" autocomplete="off"><button class="ib" aria-label="Send">${icon('send')}</button></form>
+    <div class="cv-ctl2">
+      <button class="rb" data-spk aria-pressed="false" aria-label="Speaker off">${icon('speaker')}</button>
+      <button class="rb" data-cam aria-pressed="false" aria-label="Turn camera on">${icon('video')}</button>
+      <button class="rb" data-mute aria-pressed="false" aria-label="Mute">${icon('mic')}</button>
+      <button class="endp" data-end aria-label="End call"><span class="mini"><i></i><i></i><i></i></span>End</button>
     </div>
-    <p class="cv-note">Device voice · not a live person</p>
+    <p class="cv-note">${esc(char.name)} is an AI character · device voice</p>
   </section>`);
   const cap = el.querySelector('[data-cap]');
   const st = (t) => { el.querySelector('[data-st]').textContent = t; };
-  let t0 = 0, timer = null, muted = false, speaker = true, closed = false, busy = false;
+  let t0 = 0, timer = null, muted = false, speaker = true, closed = false, busy = false, stream = null;
   const lines = [];
-  const say = (who, text) => { lines.push({ who, text }); cap.innerHTML = lines.slice(-3).map((l) => `<div class="cl"><b>${l.who === 'me' ? 'You' : esc(char.name)}</b> ${esc(l.text)}</div>`).join(''); };
+  const say = (who, text) => { lines.push({ who, text }); cap.innerHTML = lines.slice(-2).map((l) => `<div class="cl ${l.who === 'me' ? 'me' : ''}"><b>${l.who === 'me' ? 'You' : esc(char.name)}</b> ${esc(l.text)}</div>`).join(''); };
+  const wave = el.querySelector('[data-wave]');
+  const waveOn = (on) => { wave.classList.toggle('on', on); wave.classList.toggle('dim', !on); };
   const listener = createListener({
     onText: (t) => hear(t),
     onState: (s) => { if (s === 'listening' && !busy) st('Listening'); },
@@ -35,8 +40,9 @@ export function call(ctx) {
   function speak(text) {
     say('them', text);
     return new Promise((res) => {
-      if (!speaker || !voice.available()) { setTimeout(res, Math.min(4000, 800 + text.length * 40)); return; }
-      voice.speak(text, { voiceId: S.get().comp.voice, gender: char.gender, onend: res });
+      if (!speaker || !voice.available()) { waveOn(true); setTimeout(() => { waveOn(false); res(); }, Math.min(4000, 800 + text.length * 40)); return; }
+      waveOn(true);
+      voice.speak(text, { voiceId: S.get().comp.voice, gender: char.gender, onend: () => { waveOn(false); res(); } });
     });
   }
   async function hear(text) {
@@ -45,7 +51,7 @@ export function call(ctx) {
     S.addMsg({ from: 'me', text });
     try {
       const s = S.get();
-      const res = await ai.reply({ char, cfg: cfgFor(s), history: s.chat, memories: s.memories.map((m) => ({ title: m.text, companionId: char.id })), task: 'reply', note: 'You are on a voice call: reply in 1-2 short spoken sentences, no emoji.', profile: S.profileFor(s) });
+      const res = await ai.reply({ char, cfg: cfgFor(s), history: s.chat, memories: S.memForAI(s), task: 'reply', note: 'You are on a voice call: reply in 1-2 short spoken sentences, no emoji.', profile: S.profileFor(s) });
       if (closed) return;
       const text2 = res.parts.join(' ');
       S.addMsg({ from: 'them', text: text2, ...(res.offline ? { offline: true } : {}) });
@@ -62,7 +68,7 @@ export function call(ctx) {
   }, 1200);
   function end() {
     if (closed) return; closed = true;
-    clearInterval(timer); listener.stop(); voice.stop();
+    clearInterval(timer); listener.stop(); voice.stop(); stream?.getTracks().forEach((t) => t.stop());
     const secs = t0 ? Math.floor((Date.now() - t0) / 1000) : 0;
     if (secs > 0) S.addMsg({ from: 'system', text: `Voice call · ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}` });
     if (secs >= 5) { const r = S.award('call'); if (r.levelUp) setTimeout(() => celebrate(char, r.levelUp), 50); }
@@ -85,11 +91,22 @@ export function call(ctx) {
   el.querySelector('[data-form]').addEventListener('submit', (e) => { e.preventDefault(); const i = el.querySelector('#say'); const v = i.value; i.value = ''; hear(v); });
   el.addEventListener('click', (e) => {
     if (e.target.closest('[data-end]')) { const secs = end(); ctx.back(); setTimeout(() => rate(secs), 100); return; }
+    const cam = e.target.closest('[data-cam]');
+    if (cam) { toggleCam(cam); return; }
     const m = e.target.closest('[data-mute]');
-    if (m) { muted = !muted; m.setAttribute('aria-pressed', muted); m.innerHTML = `${icon(muted ? 'micOff' : 'mic')}<span>${muted ? 'Unmute' : 'Mute'}</span>`; if (muted) { listener.stop(); st('Muted'); } else { st('Listening'); listen(); } return; }
+    if (m) { muted = !muted; m.setAttribute('aria-pressed', muted); m.setAttribute('aria-label', muted ? 'Unmute' : 'Mute'); m.innerHTML = icon(muted ? 'micOff' : 'mic'); if (muted) { listener.stop(); st('Muted'); } else { st('Listening'); listen(); } return; }
     const sp = e.target.closest('[data-spk]');
-    if (sp) { speaker = !speaker; sp.setAttribute('aria-pressed', speaker); sp.innerHTML = `${icon(speaker ? 'speaker' : 'speakerOff')}<span>Speaker</span>`; if (!speaker) voice.stop(); }
+    if (sp) { speaker = !speaker; sp.setAttribute('aria-pressed', !speaker); sp.setAttribute('aria-label', speaker ? 'Speaker off' : 'Speaker on'); sp.innerHTML = icon(speaker ? 'speaker' : 'speakerOff'); if (!speaker) voice.stop(); }
   });
+  // Your camera in the corner (stays on this device; it isn't sent anywhere).
+  async function toggleCam(btn) {
+    const pip = el.querySelector('[data-pip]');
+    if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; pip.textContent = 'Camera off'; btn.setAttribute('aria-pressed', 'false'); return; }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      pip.innerHTML = '<video autoplay playsinline muted></video>'; pip.querySelector('video').srcObject = stream; btn.setAttribute('aria-pressed', 'true');
+    } catch { pip.textContent = 'Camera not available'; }
+  }
   el._cleanup = () => end();
   return el;
 }

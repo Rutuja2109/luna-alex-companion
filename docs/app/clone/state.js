@@ -71,6 +71,11 @@ export function profileFor(s = state) {
   };
 }
 
+/** Memories in the shape the AI engine reads (people keep name + relation). */
+export function memForAI(s = state, cid = s.cid) {
+  return s.memories.map((m) => ({ title: m.cat === 'people' && m.name ? `${m.name}${m.rel ? ` (${m.rel})` : ''}${m.text ? `: ${m.text}` : ''}` : m.text, companionId: cid }));
+}
+
 export function exportJson() {
   return JSON.stringify({ app: 'Luna & Alex (clone)', exported: new Date().toISOString(), data: state }, null, 2);
 }

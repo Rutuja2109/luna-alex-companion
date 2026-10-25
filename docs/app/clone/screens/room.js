@@ -19,43 +19,26 @@ export function render(ctx) {
     <div class="room-stage"><img class="room-char" src="${heroImg(char)}" alt="${esc(char.name)} in ${char.pronoun.pos} room">${decorHtml(S.get().comp.decor)}</div>
     <div class="room-fade"></div>
     <header class="room-top">
-      <button class="me-btn" data-go="profile" aria-label="${esc(char.name)}'s profile"><img src="${char.avatar}" alt=""></button>
-      <button class="lv-box" data-go="profile" aria-label="Level and progress">
-        <span class="lv-name">${esc(char.name)}</span>
-        <span class="lv-line"><span data-lv></span><span class="lv-bar"><i data-lvbar></i></span></span>
-      </button>
-      <button class="wallet" data-go="store" aria-label="Store"><span>🪙 <b data-coins></b></span><span>💎 <b data-gems></b></span></button>
-      <button class="ib" data-menu aria-label="Menu">${icon('more')}</button>
+      <button class="name-pill" data-go="profile" aria-label="${esc(char.name)}'s profile and memory">${esc(char.name)} ${icon('chev')}</button>
+      <span class="grow"></span>
+      <button class="glass-b" data-hist aria-label="Show full conversation" aria-pressed="false">${icon('chat')}</button>
     </header>
-    <div class="room-side">
-      <button class="side-b" data-go="call" aria-label="Call ${esc(char.name)}">${icon('phoneFill')}<span>Call</span></button>
-      <button class="side-b" data-go="activities" aria-label="Activities">${icon('activities')}<span>Do</span></button>
-      <button class="side-b" data-go="customize" aria-label="Customize">${icon('palette')}<span>Style</span></button>
-    </div>
-    <button class="quest-pill" data-go="activities" data-quests></button>
     <div class="feed" data-feed role="log" aria-label="Conversation with ${esc(char.name)}"></div>
     <div class="mode-note" data-mode></div>
     <form class="composer" data-form>
-      <button type="button" class="ib plus" data-plus aria-label="More: gifts, mood, diary">${icon('plus')}</button>
-      <label class="sr" for="msg">Message</label>
-      <textarea id="msg" rows="1" maxlength="2000" placeholder="Message ${esc(char.name)}…" data-input></textarea>
-      <button class="ib send" type="submit" aria-label="Send">${icon('send')}</button>
+      <button type="button" class="glass-b plus" data-plus aria-label="More: gifts, activities, mood, diary, style">${icon('plus')}</button>
+      <div class="msg-pill">
+        <label class="sr" for="msg">Message</label>
+        <textarea id="msg" rows="1" maxlength="2000" placeholder="Your message" data-input></textarea>
+        <button type="button" class="pill-act" data-act aria-label="Call ${esc(char.name)}">${icon('phone')}</button>
+      </div>
     </form>
   </section>`);
   const feed = el.querySelector('[data-feed]');
   const input = el.querySelector('[data-input]');
 
   // ---- header ---------------------------------------------------------------
-  const paintTop = () => {
-    const s = S.get(); const L = S.level();
-    el.querySelector('[data-lv]').textContent = `Level ${L.level}`;
-    el.querySelector('[data-lvbar]').style.width = `${L.pct}%`;
-    el.querySelector('[data-coins]').textContent = s.bond.coins;
-    el.querySelector('[data-gems]').textContent = s.bond.gems;
-    const done = QUESTS.filter((q) => s.bond.quests.claimed?.[q.id]).length;
-    el.querySelector('[data-quests]').innerHTML = `🎯 Daily quests ${done}/${QUESTS.length}${s.bond.streak ? ` · 🔥 ${s.bond.streak}` : ''}`;
-    el.querySelector('.lv-box').title = stageFor(L.level);
-  };
+  const paintTop = () => {};
 
   // ---- feed -------------------------------------------------------------------
   let typing = false, failure = null;
@@ -67,7 +50,8 @@ export function render(ctx) {
       if (m.state !== 'pending') return m.state === 'saved' ? `<div class="sys">🧠 Saved to memory: ${esc(m.title)}</div>` : '';
       return `<div class="remember" data-id="${m.id}"><div>🧠 <b>${esc(char.name)} wants to remember</b><br>${esc(m.title)}${m.text ? ` · ${esc(m.text)}` : ''}</div><div class="row"><button class="btn sm primary" data-rem="save">Remember</button><button class="btn sm ghost" data-rem="no">Not now</button></div></div>`;
     }
-    const tag = m.offline ? '<span class="off">offline reply</span>' : '';
+    const tag = m.offline ? '<span class="off">offline</span>' : '';
+    if (m.type === 'photo') return `<div class="msg them photo" data-id="${m.id}"><div class="selfie" style="--tilt:${(m.id.charCodeAt(0) % 2 ? 1 : -1) * 3}deg"><img src="${m.img}" alt="${esc(char.name)}'s photo"></div>${m.text ? `<div class="b">${nl2br(m.text)}<span class="t">${tag}${time(m.ts)}</span></div>` : ''}</div>`;
     const vote = m.vote === 1 ? '<span class="vt">👍</span>' : m.vote === -1 ? '<span class="vt">👎</span>' : '';
     return `<div class="msg ${m.from === 'me' ? 'me' : 'them'}" data-id="${m.id}"><div class="b">${nl2br(m.text)}<span class="t">${tag}${time(m.ts)}</span></div>${m.reaction ? `<span class="rx">${m.reaction}</span>` : ''}${vote}</div>`;
   };
@@ -104,7 +88,7 @@ export function render(ctx) {
       const s = S.get();
       res = await ai.reply({
         char, cfg: cfgFor(s), history: giftsAsText(s.chat),
-        memories: s.memories.map((m) => ({ title: m.text, companionId: char.id })),
+        memories: S.memForAI(s),
         events: [], summary: '', task, note, signal: abort.signal, profile: S.profileFor(s),
       });
     } catch (e) {
@@ -126,7 +110,8 @@ export function render(ctx) {
       await sleep(Math.min(3500, Math.max(600, text.length * rand(30, 45))));
       if (my !== gen) return;
       typing = false;
-      S.addMsg({ from: 'them', text, ...(res.offline ? { offline: true } : {}) });
+      if (i === 0 && res.selfie) S.addMsg({ from: 'them', type: 'photo', img: selfieImg(), text, ...(res.offline ? { offline: true } : {}) });
+      else S.addMsg({ from: 'them', text, ...(res.offline ? { offline: true } : {}) });
       paint();
     }
     if (res.remember) {
@@ -136,9 +121,15 @@ export function render(ctx) {
     }
     if (task === 'opener') S.update((s) => { s.lastProactive = S.now(); });
   }
+  // A photo of her right now: her current outfit or a scene from her day.
+  function selfieImg() {
+    const pool = [heroImg(char), ...Object.values(char.scenes || {}), ...char.outfits.map((o) => o.img)].filter(Boolean);
+    const used = new Set(S.get().chat.filter((m) => m.type === 'photo').slice(-3).map((m) => m.img));
+    return pool.find((x) => !used.has(x)) || pool[0];
+  }
   // Gifts become plain lines the AI can read.
   function giftsAsText(chat) {
-    return chat.filter((m) => m.type !== 'remember').map((m) => m.type === 'gift' ? { ...m, type: 'text', from: 'me', text: `[gives you a gift: ${m.text}]` } : m);
+    return chat.filter((m) => m.type !== 'remember').map((m) => m.type === 'gift' ? { ...m, type: 'text', from: 'me', text: `[gives you a gift: ${m.text}]` } : m.type === 'photo' ? { ...m, desc: 'a selfie you sent' } : m);
   }
 
   function send(text) {
@@ -152,7 +143,14 @@ export function render(ctx) {
   function reward(r) { if (!r) return; if (r.levelUp) celebrate(char, r.levelUp); if (r.quests?.length) toast(`Quest complete · +${r.quests.length > 1 ? 'coins' : '🪙'}`); paintTop(); }
 
   // ---- events -----------------------------------------------------------------
-  const grow = () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 96) + 'px'; };
+  const actBtn = el.querySelector('[data-act]');
+  const grow = () => {
+    input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 96) + 'px';
+    const typing = !!input.value.trim();
+    actBtn.innerHTML = icon(typing ? 'send' : 'phone'); actBtn.classList.toggle('send', typing);
+    actBtn.setAttribute('aria-label', typing ? 'Send' : `Call ${char.name}`);
+  };
+  actBtn.addEventListener('click', () => { if (input.value.trim()) send(input.value); else ctx.go('call'); });
   input.addEventListener('input', grow);
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input.value); } });
   el.querySelector('[data-form]').addEventListener('submit', (e) => { e.preventDefault(); send(input.value); });
@@ -160,6 +158,8 @@ export function render(ctx) {
   el.addEventListener('click', (e) => {
     const g = e.target.closest('[data-go]'); if (g) { ctx.go(g.dataset.go); return; }
     if (e.target.closest('[data-menu]')) return menu();
+    const hb = e.target.closest('[data-hist]');
+    if (hb) { const on = !el.classList.contains('hist'); el.classList.toggle('hist', on); hb.setAttribute('aria-pressed', on); paint(); return; }
     if (e.target.closest('[data-plus]')) return plus();
   });
   feed.addEventListener('click', (e) => {
@@ -213,13 +213,16 @@ export function render(ctx) {
 
   function plus() {
     sheet((s, close) => {
-      s.innerHTML = `<h2>With ${esc(char.name)}</h2><div class="grid-acts">
-        <button data-x="gift">🎁<span>Give a gift</span></button><button data-x="mood">🌤️<span>Mood check-in</span></button>
-        <button data-x="activities">🎲<span>Activities</span></button><button data-x="diary">📔<span>Diary</span></button>
-        <button data-x="memory">🧠<span>Memory</span></button><button data-x="call">📞<span>Voice call</span></button></div>`;
+      const sb = S.get().bond; const L = S.level();
+      s.innerHTML = `<div class="plus-head"><span>Level ${L.level}</span><span>🪙 ${sb.coins} · 💎 ${sb.gems}</span><span>🔥 ${sb.streak || 0}</span></div><div class="grid-acts">
+        <button data-x="photo">📸<span>Ask for a selfie</span></button><button data-x="gift">🎁<span>Give a gift</span></button>
+        <button data-x="activities">🎲<span>Activities</span></button><button data-x="mood">🌤️<span>Mood check-in</span></button>
+        <button data-x="diary">📔<span>Diary</span></button><button data-x="customize">👗<span>Style & room</span></button>
+        <button data-x="call">📞<span>Call</span></button><button data-x="store">🛍️<span>Store</span></button><button data-x="settings">⚙️<span>Settings</span></button></div>`;
       s.addEventListener('click', (e) => {
         const x = e.target.closest('[data-x]')?.dataset.x; if (!x) return; close();
         if (x === 'gift') ctx.go('store');
+        else if (x === 'photo') { S.addMsg({ from: 'me', text: 'send me a pic of what you\'re up to?' }); reward(S.award('message')); paint(); schedule('reply', 'They asked for a photo: set "selfie": true and write a short caption.', 500); }
         else if (x === 'mood') { feed.insertAdjacentHTML('beforeend', moodCard()); feed.scrollTop = feed.scrollHeight; }
         else ctx.go(x);
       });

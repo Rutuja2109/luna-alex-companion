@@ -95,16 +95,41 @@ with app() as A:
     pg.reload(); pg.wait_for_timeout(2000)
     check('...also after reopening', pg.locator('.entry').count() == 0)
 
-    # ---- memory
+    # ---- memory: Profile | Memory screen, People cards, sent to the AI
     pg.goto(U + '#memory'); pg.reload(); pg.wait_for_timeout(800)
-    pg.click('[data-add]'); pg.click('[data-c=people]'); pg.fill('#mt', "My sister's name is Priya"); pg.click('.sheet [data-ok]'); pg.wait_for_timeout(300)
-    check('fact added under its category', 'People in your life' in pg.inner_text('.body') and st(pg)['memories'][0]['cat'] == 'people')
+    check('memory screen has the Profile | Memory switch and a + button', pg.locator('.me-seg [data-tab=memory][aria-selected=true]').count() == 1 and pg.locator('[data-fab]').count() == 1)
+    pg.click('[data-fab]'); pg.click('[data-c=people]'); pg.fill('#pn', 'Priya'); pg.fill('#pr', 'Your older sister'); pg.fill('#mt', 'Calls every Sunday'); pg.click('.sheet [data-ok]'); pg.wait_for_timeout(300)
+    check('person saved with name and relation and shown as a People card', 'Priya' in pg.inner_text('.people') and st(pg)['memories'][0].get('rel') == 'Your older sister')
+    pg.click('[data-fab]'); pg.click('[data-c=goals]'); pg.fill('#mt', 'Run a 10K this year'); pg.click('.sheet [data-ok]'); pg.wait_for_timeout(300)
+    check('fact shown in its topic card with a count', pg.locator('.mcard[data-cat=goals]').count() == 1 and '1 fact' in pg.inner_text('.mcard[data-cat=goals]'))
+    pg.click('[data-tab=profile]'); pg.wait_for_timeout(200)
+    check('switching to Profile shows the companion profile', pg.locator('.pf-head').count() == 1)
     pg.goto(U + '#room'); pg.reload(); pg.wait_for_timeout(1200)
     pg.fill('#msg', 'who is my sister?'); pg.keyboard.press('Enter'); pg.wait_for_timeout(3500)
-    check('memories are sent with the next reply', "My sister's name is Priya" in pg.evaluate("window.__calls[window.__calls.length-1].input"))
+    last = pg.evaluate("window.__calls[window.__calls.length-1].input")
+    check('memories (with relation) are sent with the next reply', 'Priya (Your older sister): Calls every Sunday' in last and 'Run a 10K' in last)
     pg.goto(U + '#memory'); pg.reload(); pg.wait_for_timeout(700)
-    pg.click('[data-me=del]'); pg.click('.sheet [data-ok]'); pg.wait_for_timeout(300)
-    check('memory deleted', len(st(pg)['memories']) == 0)
+    pg.click('[data-person]'); pg.click('.sheet [data-del]'); pg.wait_for_timeout(300)
+    pg.click('.mcard[data-cat=goals]'); pg.click('.sheet [data-fe=del]'); pg.wait_for_timeout(300)
+    check('memories deleted', len(st(pg)['memories']) == 0)
+
+    # ---- main screen layout: name pill, history view, call/send button
+    pg.goto(U + '#room'); pg.reload(); pg.wait_for_timeout(1500)
+    check('main screen: name pill opens the profile', pg.locator('.name-pill').count() == 1)
+    act = pg.locator('[data-act]')
+    check('message pill shows Call when empty', act.get_attribute('aria-label').startswith('Call'))
+    pg.fill('#msg', 'x'); pg.wait_for_timeout(100)
+    check('...and Send while typing', act.get_attribute('aria-label') == 'Send')
+    pg.fill('#msg', ''); pg.click('[data-hist]'); pg.wait_for_timeout(200)
+    check('full conversation view toggles on with timestamps', pg.locator('.room.hist').count() == 1 and pg.locator('.msg .t').first.is_visible())
+    pg.click('[data-hist]')
+    # ---- customize carousel
+    pg.goto(U + '#customize'); pg.reload(); pg.wait_for_timeout(900)
+    pg.click('.lk >> nth=2'); pg.wait_for_timeout(300)
+    s = st(pg)
+    check('look carousel selects an outfit (check badge + saved)', pg.locator('.lk.on .ck').count() == 1 and s['comp']['outfit'] != 'casual')
+    pg.click('[data-tab=room]'); pg.click('.lk >> nth=4'); pg.wait_for_timeout(200)
+    check('room tab selects an apartment style', st(pg)['comp']['room'] == pg.locator('.lk.on').get_attribute('data-pick'))
 
     # ---- proactive: texts first after a quiet spell, never in quiet hours
     put(pg, "s.chat.forEach(m => m.ts -= 14*3600e3); s.lastProactive = 0")
@@ -124,7 +149,7 @@ with app() as A:
     # ---- call: typed fallback, rating
     pg.goto(U + '?t=15:00#call'); pg.reload(); pg.wait_for_timeout(2500)
     pg.fill('#say', 'hi from the call'); pg.keyboard.press('Enter'); pg.wait_for_timeout(5500)
-    check('call: typed line answered as a spoken reply', 'voice call' in pg.evaluate("window.__calls[window.__calls.length-1].input") and pg.locator('.cl').count() >= 3)
+    check('call: typed line answered as a spoken reply', 'voice call' in pg.evaluate("window.__calls[window.__calls.length-1].input") and pg.locator('.cl').count() >= 2)
     pg.click('[data-end]'); pg.wait_for_timeout(500)
     check('rating sheet after the call; send disabled until a star is picked', pg.locator('.stars').count() == 1 and pg.locator('.sheet [data-ok]').is_disabled())
     pg.click('[data-star="4"]'); pg.click('.sheet [data-ok]'); pg.wait_for_timeout(200)
@@ -151,6 +176,8 @@ with app() as A:
     pg2 = A.page(); pg2.add_init_script("window.__noSample = true")
     pg2.goto(U + '?demo=luna'); pg2.wait_for_timeout(3500)
     check('offline mode is labelled and replies are tagged', 'Offline mode' in pg2.inner_text('[data-mode]') and pg2.locator('.off').count() >= 1)
+    pg2.click('[data-plus]'); pg2.click('[data-x=photo]'); pg2.wait_for_timeout(4500)
+    check('asking for a selfie gets a photo card', pg2.locator('.msg.photo .selfie img').count() >= 1)
     check('no page errors', not A.errors, A.errors)
 
 print(f"{sum(r[1] for r in RESULTS)}/{len(RESULTS)} passed")

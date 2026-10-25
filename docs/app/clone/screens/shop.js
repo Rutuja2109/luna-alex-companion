@@ -1,5 +1,5 @@
 // S12 customize, S13 store, S14 activities & quests.
-import { h, esc, toast, sheet, Top } from '../ui.js';
+import { h, esc, toast, sheet, Top, icon } from '../ui.js';
 import * as S from '../state.js';
 import { buy, QUESTS, liveStreak } from '../../src/engine/bond.js';
 import { HOME_STYLES } from '../../src/data/characters.js';
@@ -56,29 +56,36 @@ export function store(ctx) {
 }
 
 // ---------------------------------------------------------------- customize
+// Full-screen preview with a carousel of looks (reference structure).
 export function customize(ctx) {
   const { char } = ctx;
-  let tab = 'clothes';
-  const el = h(`<section class="screen page cust">${Top(`Style ${char.name}`)}
-    <div class="cust-prev"><div class="cp-bg" data-bg></div><img data-hero alt="${esc(char.name)}"><div data-decor></div></div>
-    <div class="seg2" role="tablist"><button data-tab="clothes">Clothes</button><button data-tab="room">Room</button></div><div class="body" data-b></div></section>`);
-  const paint = () => {
+  let tab = 'looks';
+  const el = h(`<section class="screen cz">
+    <div class="cz-bg" data-bg></div><img class="cz-hero" data-hero alt="${esc(char.name)}"><div class="cz-decor" data-decor></div>
+    <header class="cz-top"><button class="glass-b" data-back aria-label="Back">${icon('back')}</button>
+      <div class="cz-tabs" role="tablist"><button role="tab" data-tab="looks">Looks</button><button role="tab" data-tab="room">Room</button><button data-store>Decor</button></div></header>
+    <div class="carousel" data-car></div><div class="dots" data-dots></div>
+  </section>`);
+  const items = () => (tab === 'looks' ? char.outfits.map((o) => ({ id: o.id, img: o.img, label: o.label })) : HOME_STYLES.map((r) => ({ id: r.id, img: r.img, label: r.label })));
+  const cur = () => (tab === 'looks' ? S.get().comp.outfit : S.get().comp.room);
+  const paint = (scroll = true) => {
     const s = S.get();
-    el.querySelector('[data-bg]').style.backgroundImage = `url('${roomBg()}')`;
     el.querySelector('[data-hero]').src = heroImg(char);
+    el.querySelector('[data-bg]').style.backgroundImage = `url('${tab === 'room' ? roomBg() : heroImg(char)}')`;
     el.querySelector('[data-decor]').innerHTML = decorHtml(s.comp.decor);
     el.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === tab));
-    el.querySelector('[data-b]').innerHTML = tab === 'clothes'
-      ? `<div class="grid3">${char.outfits.map((o) => `<button class="tile ${s.comp.outfit === o.id ? 'on' : ''}" data-o="${o.id}" aria-pressed="${s.comp.outfit === o.id}"><img src="${o.img}" alt=""><span>${esc(o.label)}</span></button>`).join('')}</div><p class="xs muted mt8">All outfits are free.</p>`
-      : `<div class="ch">Apartment style</div><div class="grid3">${HOME_STYLES.map((r) => `<button class="tile ${s.comp.room === r.id ? 'on' : ''}" data-r="${r.id}" aria-pressed="${s.comp.room === r.id}"><img src="${r.img}" alt=""><span>${esc(r.label)}</span></button>`).join('')}</div>
-         <button class="btn ghost mt12" data-go="store">Get decorations in the Store</button>`;
+    const list = items();
+    el.querySelector('[data-car]').innerHTML = list.map((it) => `<button class="lk ${cur() === it.id ? 'on' : ''}" data-pick="${it.id}" aria-pressed="${cur() === it.id}" aria-label="${esc(it.label)}"><img src="${it.img}" alt="">${cur() === it.id ? `<span class="ck">${icon('check')}</span>` : ''}<span class="lb">${esc(it.label)}</span></button>`).join('');
+    el.querySelector('[data-dots]').innerHTML = list.map((it) => `<i class="${cur() === it.id ? 'on' : ''}"></i>`).join('');
+    if (scroll) { const on = el.querySelector('.lk.on'); on?.scrollIntoView({ inline: 'center', block: 'nearest' }); }
   };
   paint();
   el.addEventListener('click', (e) => {
     const t = e.target.closest('[data-tab]'); if (t) { tab = t.dataset.tab; paint(); return; }
-    const o = e.target.closest('[data-o]'); if (o) { S.update((s) => { s.comp.outfit = o.dataset.o; }); paint(); return; }
-    const r = e.target.closest('[data-r]'); if (r) { S.update((s) => { s.comp.room = r.dataset.r; }); paint(); return; }
-    if (e.target.closest('[data-go]')) ctx.go('store', { tab: 'room' });
+    if (e.target.closest('[data-store]')) { ctx.go('store', { tab: 'room' }); return; }
+    const p = e.target.closest('[data-pick]'); if (!p) return;
+    S.update((s) => { if (tab === 'looks') s.comp.outfit = p.dataset.pick; else s.comp.room = p.dataset.pick; });
+    paint(false); p.scrollIntoView?.({ inline: 'center', behavior: 'smooth', block: 'nearest' });
   });
   return el;
 }

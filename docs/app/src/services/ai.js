@@ -178,6 +178,9 @@ export function profileBlock(profile, char, now, history = []) {
   return { about: lines.length ? lines.join('\n') + '\n' : '', data, rules: rules.map((r) => `- ${r}\n`).join('') };
 }
 
+// Companions may have a pet (Luna: Mochi, Alex: Biscuit); custom ones may not.
+export const petOf = (char) => (char.pet !== undefined ? char.pet : char.id === 'luna' ? 'Mochi' : char.id === 'alex' ? 'Biscuit' : null);
+
 // ---------------------------------------------------------------------------
 export function buildPrompt({ char, cfg, history, memories = [], events = [], summary = '', task = 'reply', note = '', now = routine.clock.now(), profile = null }) {
   const d = new Date(now);
@@ -246,7 +249,7 @@ HOW TO TEXT
 - ${recentQs >= 2 ? "You've asked several questions recently: do NOT ask a question this time." : 'At most one question, often none.'} No "how can I help", no "I'm here for you" speeches, no therapy voice, no lists, no big declarations of love.
 - Vary your openings. You recently said: ${mine || '(nothing yet)'}. Don't reuse those phrasings or emoji patterns.
 - 0-1 emoji per bubble, many bubbles with none.
-- Mention your simulated day (what you're doing, ${char.id === 'luna' ? 'Mochi' : 'Biscuit'}, your room) only when it fits, briefly. Never claim to do real-world things outside the app or to be human; if sincerely asked, you're an AI character.
+- Mention your simulated day (what you're doing, ${petOf(char) ? `${petOf(char)}, ` : ''}your room) only when it fits, briefly. Never claim to do real-world things outside the app or to be human; if sincerely asked, you're an AI character.
 ${pf.rules}- If they seem in real danger or crisis, drop the playful tone, be warm and direct, and encourage them to contact someone they trust or a local emergency/crisis line.
 
 TASK
@@ -405,19 +408,20 @@ function offlineReply(char, cfg, history, task) {
   const seed = (history.length * 7 + t.length) >>> 0;
   const act = routine.current(char, cfg);
   const doing = (act.short || act.label).toLowerCase();
-  const pet = char.id === 'luna' ? 'mochi' : 'biscuit';
+  const pet = petOf(char)?.toLowerCase() || '';
+  const P2 = (withPet, without) => (pet ? withPet : without);
   const away = absence(history);
-  if (task === 'opener') return { parts: [away > 3 * 3600e3 ? pickFresh(['there you are 😊', `hey, it's been a minute`, `${pet} and i missed you. mostly me`], seed) : pickFresh([`okay i was literally about to text you`, `${pet} has been staring at me for an hour. anyway hi`], seed)], react: null, selfie: false, remember: null };
+  if (task === 'opener') return { parts: [away > 3 * 3600e3 ? pickFresh(['there you are 😊', `hey, it's been a minute`, P2(`${pet} and i missed you. mostly me`, 'i missed you. a normal amount. okay a lot')], seed) : pickFresh([`okay i was literally about to text you`, P2(`${pet} has been staring at me for an hour. anyway hi`, 'i was just thinking about you. anyway hi')], seed)], react: null, selfie: false, remember: null };
   if (task === 'voice') return { parts: [pickFresh(['hey, just wanted to say hi and hear how your day went', 'hi you, hope today was kind to you'], seed)], react: null, selfie: false, remember: null };
   if (pending.some((m) => m.type === 'photo')) return { parts: [pickFresh(['wait i love this', 'oh that’s so nice', 'okay where is this??'], seed)], react: '❤️', selfie: false, remember: null };
   const R = [
     [/(kill myself|suicide|hurt myself|end it all|self[- ]?harm)/, () => ["i'm really glad you told me. please reach out to someone you trust or a local crisis line right now, okay? i'm an AI and i want you to have real support with you"], null],
-    [/(pic|photo|selfie|show me)/, () => [pickFresh([`here, ${doing} rn`, 'proof i’m being productive', `${pet} photobombed, sorry`], seed)], null, true],
+    [/(pic|photo|selfie|show me)/, () => [pickFresh([`here, ${doing} rn`, 'proof i’m being productive', P2(`${pet} photobombed, sorry`, 'bad lighting, good vibes')], seed)], null, true],
     [/(tired|exhausted|long day|drained|so much work|meetings)/, () => [pickFresh(['ugh that sounds draining', 'nooo not another one of those days', 'okay you’re officially off duty'], seed), pickFresh(['go lie down for a sec', 'did you at least eat?', 'tell me the worst part'], seed + 1)], '😢'],
     [/(sad|down|upset|lonely|bad day|anxious|stressed|nervous|scared|worried)/, () => [pickFresh(['come here 🥺', 'that sounds heavy', 'aw no'], seed), pickFresh(['want to talk about it or want a distraction', 'i’m not going anywhere', 'what happened'], seed + 2)], '🥹'],
     [/(happy|great|good news|excited|yay|finally|passed|got the)/, () => [pickFresh(['wait yesss', 'stop that’s amazing', 'okay i’m so proud of you'], seed), pickFresh(['tell me everything', 'we’re celebrating', ''], seed + 1)], '🔥'],
     [/^(hi|hey|hello|heyy+|yo|hii+)\b(\W+\w+){0,2}\W*$/, () => [away > 3 * 3600e3 ? pickFresh(["heyy you're back!", 'there you are'], seed) : pickFresh(['hiii', 'oh hey you', 'hey hey'], seed)], null],
-    [/(what are you doing|wyd|what r u doing|what you doing|what's up|whats up|sup)/, () => [pickFresh([`${doing} rn`, `just ${doing}, ${pet} is supervising`, `${doing}. send help`], seed)], null],
+    [/(what are you doing|wyd|what r u doing|what you doing|what's up|whats up|sup)/, () => [pickFresh([`${doing} rn`, P2(`just ${doing}, ${pet} is supervising`, `just ${doing}, nothing exciting`), `${doing}. send help`], seed)], null],
     [/(love you|miss you|missed you)/, () => [pickFresh(['🥹', 'stoppp', 'okay that made my day'], seed), pickFresh(['missed you too', ''], seed)], '❤️'],
     [/(study|exam|test|mba|gmat|mock|assignment|deadline)/, () => [pickFresh(['ugh deadlines', 'okay study buddy mode', 'you’ve got this'], seed), pickFresh(['want to do a focus session together?', 'what are you on right now', ''], seed + 3)], null],
     [/(night|sleep|bed|gn)\b/, () => [pickFresh(['get some sleep okay', 'night night 🌙', 'sleep well, talk tomorrow'], seed)], null],
@@ -454,6 +458,6 @@ Write 2-4 warm, specific sentences in first person, lowercase-casual like your t
   if (said.length) bits.push(`we talked today. they told me "${said[said.length > 1 ? said.length - 2 : 0].slice(0, 90)}"${said.length > 3 ? ' and a lot more' : ''}.`);
   if (moments.length) bits.push(`we spent time together: ${moments.slice(0, 2).join(', ').toLowerCase()}.`);
   if (mood) bits.push(`they said they felt ${mood.toLowerCase()} today.`);
-  bits.push(char.id === 'luna' ? 'mochi says hi. talk tomorrow.' : 'biscuit says hi. talk tomorrow.');
+  bits.push(petOf(char) ? `${petOf(char).toLowerCase()} says hi. talk tomorrow.` : 'talk tomorrow.');
   return { text: bits.join(' '), offline: true };
 }

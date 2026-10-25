@@ -1,0 +1,33 @@
+{
+  "mode": "layout",
+  "original": {
+    "width": 1067,
+    "height": 2050
+  },
+  "clone": {
+    "width": 780,
+    "height": 1688
+  },
+  "compared_at": {
+    "width": 480,
+    "height": 922
+  },
+  "height_delta_pct": 12.7,
+  "score": 18.7,
+  "verdict": "different",
+  "regions": [
+    {
+      "x": 0,
+      "y": 0,
+      "w": 1067,
+      "h": 2050,
+      "cells": 197,
+      "where": "middle centre"
+    }
+  ],
+  "files": {
+    "original": "replica/screens/S07-main.png",
+    "clone": "replica/clone-screens/S07-main.png"
+  },
+  "diff_image": "replica/diffs/S07-main.png"
+}

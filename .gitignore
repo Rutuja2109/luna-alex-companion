@@ -5,3 +5,4 @@ qa/*.txt
 .DS_Store
 node_modules/
 qa/
+replica/screens/

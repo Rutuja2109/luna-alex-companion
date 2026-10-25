@@ -22,7 +22,10 @@ export function seed(cid) {
   s.memories = [
     { id: 'm1', cat: 'goals', text: 'Preparing for the GMAT, target 700', ts: at(3, 20) },
     { id: 'm2', cat: 'likes', text: 'Iced oat latte, no sugar', ts: at(4, 9) },
-    { id: 'm3', cat: 'people', text: 'Sister: Priya, lives in Pune', ts: at(5, 21) },
+    { id: 'm3', cat: 'people', name: 'Priya', rel: 'Your older sister', text: 'Lives in Pune. The one you call every Sunday.', ts: at(5, 21) },
+    { id: 'm5', cat: 'people', name: 'Kabir', rel: 'Best friend since college', text: 'Gets your 11pm voice notes', ts: at(5, 20) },
+    { id: 'm6', cat: 'about', text: 'Moved to Bengaluru last year for work; still misses home food', ts: at(6, 21) },
+    { id: 'm7', cat: 'goals', text: 'Wants to start a small design studio one day', ts: at(7, 21) },
     { id: 'm4', cat: 'dates', text: 'MBA application deadline: 15 Jan 2027', ts: at(6, 22) },
   ];
   s.diary = [

@@ -19,10 +19,10 @@ export const MOODS = [
 ];
 
 export const MEMORY_CATS = [
-  { id: 'about', label: 'About you' },
-  { id: 'people', label: 'People in your life' },
+  { id: 'about', label: 'Story' },
+  { id: 'goals', label: 'Dreams' },
+  { id: 'people', label: 'People' },
   { id: 'likes', label: 'Likes & dislikes' },
-  { id: 'goals', label: 'Goals & plans' },
   { id: 'dates', label: 'Important dates' },
   { id: 'other', label: 'Other' },
 ];
