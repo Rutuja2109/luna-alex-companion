@@ -2,7 +2,7 @@
 import { h, esc, toast, confirmSheet, Header } from '../ui/components.js';
 import { icon } from '../ui/icons.js';
 import { ACTIVITIES } from '../data/activities.js';
-import { addMessage } from '../state/actions.js';
+import { addMessage, startShared, heartbeat, endShared } from '../state/actions.js';
 import * as ai from '../services/ai.js';
 
 export function render(ctx) {
@@ -39,27 +39,37 @@ export function render(ctx) {
     busy = true; prompts([]); line('me', t);
     addMessage(char.id, { from: 'me', type: 'text', text: t, read: true });
     try {
-      const history = [...ctx.store.get().chats[char.id]];
-      history.splice(-1, 0, { from: 'me', type: 'text', text: `(we're doing an activity together: ${a.label.toLowerCase()})` });
-      const { parts } = await ai.reply({ char, cfg, history, memories: ctx.store.get().memories });
-      parts.forEach((p) => { line('them', p); addMessage(char.id, { from: 'them', type: 'text', text: p }); });
-    } catch { toast(`${char.name} didn't catch that. Try again.`); }
+      const st = ctx.store.get();
+      const res = await ai.reply({ char, cfg, history: st.chats[char.id] || [],
+        memories: st.memories.filter((m) => m.companionId === char.id),
+        events: (st.events || []).filter((e) => e.companionId === char.id),
+        summary: st.chatMeta?.[char.id]?.summary || '',
+        note: `You're doing this together with the user right now: ${a.label.toLowerCase()}. Keep it about the moment.` });
+      res.parts.forEach((p) => { line('them', p); addMessage(char.id, { from: 'them', type: 'text', text: p, ...(res.offline ? { offline: true } : {}) }); });
+    } catch (e) { if (e?.name !== 'AbortError') { toast(`${char.name} ${e?.message || "couldn't reply"}. Send it again.`); prompts(a.prompts); } }
     busy = false;
   }
 
   setTimeout(() => { line('them', a.opener || 'hey you, glad you’re here'); prompts(a.prompts); }, 600);
-  addMessage(char.id, { from: 'system', type: 'activity', text: `Started: ${a.label}` });
-  const timer = setInterval(() => { $('[data-t]').textContent = `Together · ${Math.floor((Date.now() - t0) / 60000)} min`; }, 15000);
+  // Persistent shared moment: overrides her routine while you're here.
+  const evId = startShared(char.id, a.id, a.past ? undefined : a.label);
+  let ended = false;
+  const finishShared = () => {
+    if (ended) return; ended = true;
+    const mins = Math.max(1, Math.round((Date.now() - t0) / 60000));
+    endShared(evId, { text: `${a.past || a.label} (${mins} min)`, minutes: mins, label: a.past });
+    addMessage(char.id, { from: 'system', type: 'activity', text: `${a.past || a.label} · ${mins} min` });
+  };
+  const timer = setInterval(() => { heartbeat(evId); $('[data-t]').textContent = `Together · ${Math.floor((Date.now() - t0) / 60000)} min`; }, 15000);
 
   el.addEventListener('click', (e) => { const p = e.target.closest('[data-p]'); if (p) userSaid(p.dataset.p); });
   $('[data-talk]').addEventListener('submit', (e) => { e.preventDefault(); userSaid($('#say').value); $('#say').value = ''; });
   $('[data-leave]').onclick = async () => {
     if (await confirmSheet({ title: `Leave ${a.label.toLowerCase()}?`, body: `${char.name} will go back to ${char.pronoun.pos} routine. Anything you said stays in your chat.`, ok: 'Leave' })) {
-      const mins = Math.max(1, Math.round((Date.now() - t0) / 60000));
-      addMessage(char.id, { from: 'system', type: 'activity', text: `${a.label} · ${mins} min` });
+      finishShared();
       ctx.back('activities');
     }
   };
-  el._cleanup = () => clearInterval(timer);
+  el._cleanup = () => { clearInterval(timer); finishShared(); };
   return el;
 }

@@ -2,14 +2,27 @@ import * as store from './state/store.js';
 import * as router from './router.js';
 import { CHARACTERS } from './data/characters.js';
 import { seedDemo } from './state/demo.js';
-import { clock } from './engine/routine.js';
+import { clock, setSource } from './engine/routine.js';
+import { closeStale, snapshotDay } from './state/actions.js';
 
 store.load();
+setSource(() => store.get());
 
 // Local QA only: ?demo=luna|alex seeds a finished companion with example data.
 const qs = new URLSearchParams(location.search);
 if (qs.get('demo')) seedDemo(qs.get('demo'), qs.get('fresh') !== '0');
 if (qs.get('t')) { const [hh, mm] = qs.get('t').split(':').map(Number); const d = new Date(); d.setHours(hh, mm || 0, 0, 0); clock.offset = d - Date.now(); window.__clockOffset = clock.offset; }
+
+closeStale();
+snapshotDay();
+// A study session keeps running while you look at chat etc.: keep it live.
+setInterval(async () => {
+  const a = store.get().activeStudy;
+  if (a && !a.paused && a.evId) {
+    const { heartbeat } = await import('./state/actions.js');
+    heartbeat(a.evId);
+  }
+}, 30000);
 
 function ctxFactory(params) {
   const s = store.get();
@@ -65,3 +78,13 @@ import('./ui/components.js').then(({ toast }) => {
     lastId = act.id;
   }, 60000);
 });
+
+// Keep a running Study Together session "live" while the user visits other
+// screens (it continues until they end it).
+setInterval(async () => {
+  const a = store.get().activeStudy;
+  if (!a || a.paused || !a.evId) return;
+  const { heartbeat } = await import('./state/actions.js');
+  heartbeat(a.evId);
+  store.update((s) => { if (s.activeStudy) { s.activeStudy.elapsed += Math.round((Date.now() - s.activeStudy.lastTick) / 1000); s.activeStudy.lastTick = Date.now(); } }, { silent: true });
+}, 30000);

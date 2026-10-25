@@ -39,6 +39,7 @@ export const CHARACTERS = {
     },
     chatPhoto: A('scenes/luna-cat.jpg'),
     chatPhotoDesc: 'you lying in bed cuddling your cat Mochi',
+    studyTopic: { what: 'her UX case study', unit: 'screens sketched', rate: 7, pause: 'Mochi is on her keyboard again' },
     greeting: 'Hey, how was your day?\nWant to catch up?',
     // Fictional backstory used by the conversation engine. Kept consistent
     // with her photos (cozy apartment, cat, study desk).
@@ -86,6 +87,7 @@ export const CHARACTERS = {
     },
     chatPhoto: A('scenes/alex-dog.jpg'),
     chatPhotoDesc: 'you lying on the couch next to your dog Biscuit',
+    studyTopic: { what: 'his structures exam notes', unit: 'pages done', rate: 6, pause: 'stretching, Biscuit wants a walk' },
     greeting: 'Hey, how are you feeling today?',
     persona: {
       age: 25,

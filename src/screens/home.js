@@ -40,7 +40,8 @@ export function render(ctx) {
         <span class="grow"><span class="label" data-act-label></span><br><span class="small muted" data-act-meta></span></span>
         ${icon('chev', 'chev')}
       </button>
-      <p class="xs muted sim-note">Simulated daily life · updates from ${char.name}'s routine</p>
+      <p class="xs muted sim-note"><span data-last></span></p>
+      <p class="xs muted sim-note">${char.name}'s day is simulated by the app · updates from ${char.pronoun.pos} routine</p>
     </div>
     ${BottomNav('home')}
   </section>`);
@@ -52,7 +53,11 @@ export function render(ctx) {
     s.className = `status ${st.cls}`; s.textContent = st.text;
     el.querySelector('[data-act-img]').src = act.img;
     el.querySelector('[data-act-label]').textContent = act.label;
-    el.querySelector('[data-act-meta]').innerHTML = `${esc(act.desc)} <span class="dot">•</span> ${ago(act.start)}`;
+    el.querySelector('[data-act-meta]').innerHTML = act.withUser
+      ? `With you right now <span class="dot">•</span> ${ago(act.start)}`
+      : `${esc(act.desc)} <span class="dot">•</span> ${ago(act.start)}`;
+    const lastShared = (ctx.store.get().events || []).filter((e) => e.companionId === char.id && e.closed).pop();
+    el.querySelector('[data-last]').textContent = lastShared ? `Last time together: ${lastShared.label.toLowerCase()} · ${ago(lastShared.end || lastShared.ts)}` : '';
   };
   paint();
   const timer = setInterval(paint, 30000);

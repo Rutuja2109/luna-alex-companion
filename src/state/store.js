@@ -50,6 +50,9 @@ export function initialState() {
     studySessions: [],
     customWallpapers: [],
     chatMeta: {},
+    events: [],   // shared moments with the user (persistent, per companion)
+    activeStudy: null,
+    days: {},     // '<companionId>:<YYYY-MM-DD>' -> routine snapshot for days already seen
     updatedAt: Date.now(),
   };
 }

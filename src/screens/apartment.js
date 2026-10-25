@@ -36,7 +36,7 @@ export function render(ctx) {
     body.innerHTML = `
       <div class="photo-card live-scene">
         <img src="${img}" alt="${here ? `${char.name}, ${act.label}` : `Empty ${rLabel}`}" class="breathe" style="filter:${lightFilter(home.lighting)}">
-        ${here ? '<span class="live-badge"><i></i>LIVE</span>' : ''}
+        ${here ? `<span class="live-badge"><i></i>${act.withUser ? 'WITH YOU' : 'SIMULATED · NOW'}</span>` : ''}
         <div class="card row live-card">
           <span class="avatar"><img src="${char.avatar}" alt=""></span>
           <span class="grow"><span class="label">${here ? `${char.name} is ${esc(act.short || act.label).toLowerCase()}` : `${rLabel} · empty right now`}</span><br>
@@ -46,7 +46,8 @@ export function render(ctx) {
       <div class="grid4 mt12" role="tablist" aria-label="Rooms">${ROOMS.map((r) => `<button class="tile-col ${r.id === viewing ? 'selected' : ''}" data-room="${r.id}" aria-selected="${r.id === viewing}">
         <span class="tile room-th"><img src="${roomImg(char, r.id)}" alt="" loading="lazy">${r.id === viewing ? `<span class="cap sel">${r.label.replace(' Room', '')}</span>` : ''}</span>
         ${r.id === viewing ? '' : `<span class="tile-label">${r.label}</span>`}</button>`).join('')}</div>
-      ${here && act.joinable ? `<button class="btn btn-primary mt16" data-join>Join ${char.pronoun.obj}</button>`
+      ${here && act.withUser ? `<button class="btn btn-primary mt16" data-return>Back to ${esc(act.label.toLowerCase())}</button>`
+        : here && act.joinable ? `<button class="btn btn-primary mt16" data-join>Join ${char.pronoun.obj}</button>`
         : `<button class="btn btn-ghost mt16" data-follow>${here ? `${char.name} is resting` : `Go to ${char.name}`}</button>`}`;
   };
   paint();
@@ -57,6 +58,11 @@ export function render(ctx) {
     const r = e.target.closest('[data-room]:not([aria-pressed])');
     if (r && tab === 'live') { room = r.dataset.room; paint(); return; }
     if (e.target.closest('[data-follow]')) { room = null; paint(); return; }
+    if (e.target.closest('[data-return]')) {
+      const act = routine.current(char, cfg);
+      ctx.go(['study', 'work'].includes(act.activity) ? 'study' : act.activity === 'call' ? 'call' : 'activity', { id: act.activity });
+      return;
+    }
     if (e.target.closest('[data-join]')) {
       const act = routine.current(char, cfg);
       ctx.go(act.activity === 'study' || act.activity === 'work' ? 'study' : 'activity', { id: act.activity });

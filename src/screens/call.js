@@ -4,7 +4,7 @@
 // service and are spoken with the voice engine, with captions.
 import { h, esc, toast, sheet } from '../ui/components.js';
 import { icon } from '../ui/icons.js';
-import { addMessage } from '../state/actions.js';
+import { addMessage, startShared, heartbeat, endShared } from '../state/actions.js';
 import * as ai from '../services/ai.js';
 import * as voice from '../services/voice.js';
 import { heroFor } from './home.js';
@@ -17,7 +17,7 @@ export function render(ctx) {
   const settings = ctx.store.get().settings;
   let state = 'connecting';
   let muted = false, speaker = settings.speaker !== false, captions = settings.captions !== false;
-  let t0 = 0, timer = null, rec = null, closed = false;
+  let t0 = 0, timer = null, rec = null, closed = false, evId = null, beats = 0;
   const lines = [];
 
   const el = h(`<section class="screen call ${mode}">
@@ -101,7 +101,8 @@ export function render(ctx) {
   setTimeout(() => {
     if (closed) return;
     t0 = Date.now();
-    timer = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); $('[data-time]').textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; }, 500);
+    evId = startShared(char.id, 'call', mode === 'video' ? 'On a video call with you' : 'On a call with you');
+    timer = setInterval(() => { if (++beats % 40 === 0) heartbeat(evId); const s = Math.floor((Date.now() - t0) / 1000); $('[data-time]').textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; }, 500);
     say(pickHello());
   }, 1400);
   function pickHello() {
@@ -114,7 +115,9 @@ export function render(ctx) {
     closed = true;
     clearInterval(timer); voice.stop(); try { rec?.stop(); } catch {}
     const secs = t0 ? Math.floor((Date.now() - t0) / 1000) : 0;
-    addMessage(char.id, { from: 'system', type: 'call', text: `${mode === 'video' ? 'Video' : 'Voice'} call · ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}` });
+    const dur = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+    if (evId) endShared(evId, { text: `${mode === 'video' ? 'Video' : 'Voice'} call together (${dur})`, minutes: Math.max(1, Math.round(secs / 60)), label: mode === 'video' ? 'Video call' : 'Voice call' });
+    addMessage(char.id, { from: 'system', type: 'call', text: `${mode === 'video' ? 'Video' : 'Voice'} call · ${dur}` });
   }
 
   el.addEventListener('click', (e) => {
