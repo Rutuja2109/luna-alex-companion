@@ -7,7 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { WebView } from 'react-native-webview';
 
 // The app built by tools/build_web.py and served by GitHub Pages.
-export const APP_URL = 'https://rutuja2109.github.io/luna-alex-companion/app/';
+export const APP_URL = 'https://rutuja2109.github.io/luna-alex-companion/app/clone.html'; // original app: .../app/
 
 export default function App() {
   const web = useRef(null);
