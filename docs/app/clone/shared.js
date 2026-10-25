@@ -1,4 +1,4 @@
-import { HOME_STYLES } from '../src/data/characters.js';
+import { HOME_STYLES } from './art.js';
 import { sheet, esc } from './ui.js';
 import * as S from './state.js';
 

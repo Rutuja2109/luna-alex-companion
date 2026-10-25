@@ -8,7 +8,7 @@ export function seed(cid) {
   const at = (days, h, m = 0) => { const d = new Date(now - days * D); d.setHours(h, m, 0, 0); return d.getTime(); };
   s.onboarded = true; s.cid = cid === 'alex' ? 'alex' : 'luna';
   s.user = { name: 'Riya', pronouns: 'she/her', age: '18–24', goals: ['focus', 'company'] };
-  s.comp = { status: 'friend', interests: ['Books', 'Careers', 'Travel'], backstory: 'Grew up by the sea, moved to the city for design school. Terrible at cooking, great at playlists.', traits: ['caring', 'playful'], voice: s.cid === 'alex' ? 'v4' : 'v1', outfit: 'casual', room: 'cozy', decor: ['warm', 'plants', 'fairy'] };
+  s.comp = { status: 'friend', interests: ['Books', 'Careers', 'Travel'], backstory: 'Grew up by the sea, moved to the city for design school. Terrible at cooking, great at playlists.', traits: ['caring', 'playful'], voice: s.cid === 'alex' ? 'v4' : 'v1', outfit: 'home', room: 'cozy', decor: ['warm', 'fairy'] };
   s.chat = [
     { id: 'c1', from: 'them', text: 'morning! did you sleep at all before the mock test 👀', ts: at(1, 8, 10) },
     { id: 'c2', from: 'me', text: 'barely. quant section is going to destroy me', ts: at(1, 8, 14) },

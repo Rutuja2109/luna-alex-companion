@@ -1,6 +1,6 @@
 // Structural clone entry point: router + background behaviour.
 import * as S from './state.js';
-import { CHARACTERS } from '../src/data/characters.js';
+import { CHARACTERS } from './art.js';
 import * as ai from '../src/services/ai.js';
 import { toast } from './ui.js';
 import { cfgFor } from './shared.js';

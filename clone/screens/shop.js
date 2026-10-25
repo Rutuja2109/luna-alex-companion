@@ -73,6 +73,7 @@ export function customize(ctx) {
     el.querySelector('[data-hero]').src = heroImg(char);
     el.querySelector('[data-bg]').style.backgroundImage = `url('${tab === 'room' ? roomBg() : heroImg(char)}')`;
     el.querySelector('[data-decor]').innerHTML = decorHtml(s.comp.decor);
+    el.dataset.tab = tab;
     el.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === tab));
     const list = items();
     el.querySelector('[data-car]').innerHTML = list.map((it) => `<button class="lk ${cur() === it.id ? 'on' : ''}" data-pick="${it.id}" aria-pressed="${cur() === it.id}" aria-label="${esc(it.label)}"><img src="${it.img}" alt="">${cur() === it.id ? `<span class="ck">${icon('check')}</span>` : ''}<span class="lb">${esc(it.label)}</span></button>`).join('');

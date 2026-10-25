@@ -16,7 +16,7 @@ export function initial() {
     onboarded: false,
     user: { name: '', pronouns: '', age: '', goals: [] },
     cid: 'luna',
-    comp: { status: 'friend', interests: [], backstory: '', traits: ['caring'], voice: 'v1', outfit: 'casual', room: 'modern', decor: ['warm'] },
+    comp: { status: 'friend', interests: [], backstory: '', traits: ['caring'], voice: 'v1', outfit: 'home', room: 'modern', decor: ['warm'] },
     chat: [],
     memories: [],   // {id, cat, text, ts}
     diary: [],      // {id, day, text, ts, vote, offline}

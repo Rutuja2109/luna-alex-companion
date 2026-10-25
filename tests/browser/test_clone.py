@@ -23,7 +23,7 @@ with app() as A:
     pg.click('[data-pick="Books"]'); pg.click('[data-pick="Travel"]'); pg.click('[data-next]')
     pg.wait_for_selector('[data-meet]', timeout=6000); pg.click('[data-meet]'); pg.wait_for_timeout(800)
     s = st(pg)
-    check('onboarding saves every answer', s['onboarded'] and s['user']['name'] == 'Riya' and s['user']['age'] == '25–34' and s['cid'] == 'alex' and s['comp']['status'] == 'mentor' and s['comp']['outfit'] == 'study' and 'calm' in s['comp']['traits'] and s['user']['goals'] == ['focus'] and s['comp']['interests'] == ['Books', 'Travel'])
+    check('onboarding saves every answer', s['onboarded'] and s['user']['name'] == 'Riya' and s['user']['age'] == '25–34' and s['cid'] == 'alex' and s['comp']['status'] == 'mentor' and s['comp']['outfit'] == 'street' and 'calm' in s['comp']['traits'] and s['user']['goals'] == ['focus'] and s['comp']['interests'] == ['Books', 'Travel'])
     check('lands on the main room screen with a first message', pg.evaluate('window.__screen') == 'room' and pg.locator('.msg.them').count() >= 1)
 
     # ---- chat: XP, quest, streak, prompt carries the profile
@@ -127,7 +127,7 @@ with app() as A:
     pg.goto(U + '#customize'); pg.reload(); pg.wait_for_timeout(900)
     pg.click('.lk >> nth=2'); pg.wait_for_timeout(300)
     s = st(pg)
-    check('look carousel selects an outfit (check badge + saved)', pg.locator('.lk.on .ck').count() == 1 and s['comp']['outfit'] != 'casual')
+    check('look carousel selects an outfit (check badge + saved)', pg.locator('.lk.on .ck').count() == 1 and s['comp']['outfit'] != 'home')
     pg.click('[data-tab=room]'); pg.click('.lk >> nth=4'); pg.wait_for_timeout(200)
     check('room tab selects an apartment style', st(pg)['comp']['room'] == pg.locator('.lk.on').get_attribute('data-pick'))
 

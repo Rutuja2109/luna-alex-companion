@@ -1,7 +1,7 @@
 // S01–S06 onboarding, in the original's order (recon F01), without a paywall.
 import { h, esc, icon } from '../ui.js';
 import * as S from '../state.js';
-import { CHARACTERS, PERSONALITIES } from '../../src/data/characters.js';
+import { CHARACTERS, PERSONALITIES, WELCOME } from '../art.js';
 import { GOALS, AGES, PRONOUNS } from '../catalog.js';
 import { STATUSES, INTERESTS } from '../../src/engine/bond.js';
 
@@ -23,7 +23,7 @@ export function render(ctx) {
 
   let body = '';
   if (step === 'welcome') {
-    body = `<div class="ob-hero"><img src="assets/characters/duo-welcome.jpg" alt="Luna and Alex"></div>
+    body = `<div class="ob-hero"><img src="${WELCOME}" alt="Luna and Alex"></div>
       <div class="ob-copy center"><h1>Someone who's always glad you came back</h1><p class="muted">A friend who remembers your day, does things with you and never turns into someone else.</p></div>
       <div class="ob-foot"><button class="btn primary" data-next>Get started</button><p class="xs muted center">Luna and Alex are fictional AI characters. Your data stays on this device.</p></div>`;
   } else if (step === 'name') {
@@ -36,7 +36,7 @@ export function render(ctx) {
   } else if (step === 'role') {
     body = `<div class="ob-copy"><h1>What would you like them to be?</h1><p class="muted">You can change this any time. Every option is free.</p></div>${choice(STATUSES, s.comp.status, 'pick')}${foot()}`;
   } else if (step === 'companion') {
-    body = `<div class="ob-copy"><h1>Choose your companion</h1></div><div class="pick2">${['luna', 'alex'].map((id) => `<button class="pick-c ${s.cid === id ? 'on' : ''}" data-pick="${id}" aria-pressed="${s.cid === id}"><img src="${CHARACTERS[id].portrait}" alt=""><b>${CHARACTERS[id].name}</b><span>${esc(CHARACTERS[id].tagline || '')}</span></button>`).join('')}</div>${foot()}`;
+    body = `<div class="ob-copy"><h1>Choose your companion</h1></div><div class="pick2">${['luna', 'alex'].map((id) => `<button class="pick-c ${s.cid === id ? 'on' : ''}" data-pick="${id}" aria-pressed="${s.cid === id}"><img src="${CHARACTERS[id].hero}" alt=""><b>${CHARACTERS[id].name}</b><span>${esc(CHARACTERS[id].tagline || '')}</span></button>`).join('')}</div>${foot()}`;
   } else if (step === 'style') {
     body = `<div class="ob-copy"><h1>Pick ${esc(char.name)}'s look</h1></div>
       <div class="style-hero"><img src="${(char.outfits.find((o) => o.id === s.comp.outfit) || char.outfits[0]).img}" alt="${esc(char.name)}"></div>
